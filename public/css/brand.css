@@ -1,0 +1,77 @@
+/* ===========================
+   Paleta de Vigilante
+=========================== */
+:root {
+    --color1: #ffffff;
+    --color2: #000000;
+    --color3: #ff3300; /* Primario */
+    --color4: #ffb300; /* Secundario */
+    --color5: #fff538; /* Acento */
+    --bg-overlay: rgba(0, 0, 0, 0.35);
+}
+
+/* ===========================
+   Fondo global con imagen
+=========================== */
+body {
+    background:
+        var(--bg-overlay),
+        url('/images/brand/vigilante-mark.png') no-repeat center center fixed;
+    background-size: cover;
+    color: var(--color2);
+}
+
+/* ===========================
+   Ajustes de AdminLTE
+=========================== */
+a {
+    color: var(--color3);
+}
+a:hover {
+    color: var(--color4);
+}
+
+.btn-primary {
+    background-color: var(--color3) !important;
+    border-color: var(--color3) !important;
+}
+.btn-primary:hover {
+    background-color: var(--color4) !important;
+    border-color: var(--color4) !important;
+}
+
+.navbar, .main-header {
+    background-color: var(--color3) !important;
+}
+.navbar a, .main-header a {
+    color: var(--color1) !important;
+}
+
+/* Tarjetas y paneles */
+.card {
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+/* Login y registro */
+.login-page, .register-page {
+    background:
+        var(--bg-overlay),
+        url('/images/brand/vigilante-mark.png') no-repeat center center fixed;
+    background-size: cover;
+}
+
+/* Asegurar contraste en textos sobre fondo */
+.login-card-body, .register-card-body, .card {
+    background-color: rgba(255,255,255,0.88) !important;
+    backdrop-filter: blur(6px);
+}
+
+/* ===========================
+   Responsive tweaks
+=========================== */
+@media (max-width: 768px) {
+    body {
+        background-attachment: scroll;
+    }
+}

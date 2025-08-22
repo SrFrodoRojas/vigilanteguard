@@ -1,0 +1,207 @@
+[
+{"type":"header","version":"5.2.1deb3","comment":"Export to JSON plugin for PHPMyAdmin"},
+{"type":"database","name":"vigilante"},
+{"type":"table","name":"accesses","database":"vigilante","data":
+[
+{"id":"1","type":"vehicle","plate":"AAEX-621","marca_vehiculo":null,"color_vehiculo":null,"tipo_vehiculo":null,"people_count":null,"full_name":"roseli bohado","document":"4801734","entry_at":"2025-08-12 01:18:21","entry_note":null,"vehicle_exit_at":null,"exit_at":"2025-08-12 01:19:07","exit_note":null,"user_id":"1","created_at":"2025-08-12 01:18:21","updated_at":"2025-08-12 01:19:07","vehicle_exit_driver_id":null},
+{"id":"2","type":"vehicle","plate":"AAEX-621","marca_vehiculo":null,"color_vehiculo":null,"tipo_vehiculo":null,"people_count":null,"full_name":"roseli bohado","document":"4801734","entry_at":"2025-08-12 02:59:10","entry_note":null,"vehicle_exit_at":null,"exit_at":"2025-08-12 02:59:33","exit_note":null,"user_id":"1","created_at":"2025-08-12 02:59:10","updated_at":"2025-08-12 02:59:33","vehicle_exit_driver_id":null},
+{"id":"3","type":"vehicle","plate":"AAEX-621","marca_vehiculo":null,"color_vehiculo":null,"tipo_vehiculo":null,"people_count":null,"full_name":"fulana","document":"12344556","entry_at":"2025-08-12 03:01:10","entry_note":null,"vehicle_exit_at":null,"exit_at":"2025-08-12 03:01:56","exit_note":null,"user_id":"1","created_at":"2025-08-12 03:01:10","updated_at":"2025-08-12 03:01:56","vehicle_exit_driver_id":null},
+{"id":"4","type":"pedestrian","plate":"AAEX-621","marca_vehiculo":null,"color_vehiculo":null,"tipo_vehiculo":null,"people_count":"2","full_name":"roseli bohado","document":"4801734","entry_at":"2025-08-12 03:03:09","entry_note":null,"vehicle_exit_at":null,"exit_at":"2025-08-12 03:05:02","exit_note":null,"user_id":"1","created_at":"2025-08-12 03:03:09","updated_at":"2025-08-12 03:05:02","vehicle_exit_driver_id":null},
+{"id":"5","type":"pedestrian","plate":null,"marca_vehiculo":null,"color_vehiculo":null,"tipo_vehiculo":null,"people_count":null,"full_name":"fffff","document":"123456","entry_at":"2025-08-12 01:06:19","entry_note":null,"vehicle_exit_at":null,"exit_at":"2025-08-12 01:06:49","exit_note":null,"user_id":"1","created_at":"2025-08-12 01:06:19","updated_at":"2025-08-12 01:06:49","vehicle_exit_driver_id":null},
+{"id":"6","type":"pedestrian","plate":null,"marca_vehiculo":null,"color_vehiculo":null,"tipo_vehiculo":null,"people_count":null,"full_name":"sdsdsd","document":"123456","entry_at":"2025-08-12 01:09:29","entry_note":null,"vehicle_exit_at":null,"exit_at":"2025-08-12 01:09:55","exit_note":null,"user_id":"1","created_at":"2025-08-12 01:09:29","updated_at":"2025-08-12 01:09:56","vehicle_exit_driver_id":null},
+{"id":"7","type":"vehicle","plate":"123456","marca_vehiculo":null,"color_vehiculo":null,"tipo_vehiculo":null,"people_count":null,"full_name":"dffd","document":"123455","entry_at":"2025-08-12 01:10:18","entry_note":null,"vehicle_exit_at":"2025-08-12 01:11:03","exit_at":"2025-08-12 01:11:03","exit_note":null,"user_id":"1","created_at":"2025-08-12 01:10:18","updated_at":"2025-08-12 01:11:03","vehicle_exit_driver_id":null},
+{"id":"8","type":"vehicle","plate":"123456","marca_vehiculo":null,"color_vehiculo":null,"tipo_vehiculo":null,"people_count":null,"full_name":"chofer","document":"1234","entry_at":"2025-08-12 01:11:27","entry_note":null,"vehicle_exit_at":"2025-08-12 01:12:10","exit_at":"2025-08-12 01:12:10","exit_note":null,"user_id":"1","created_at":"2025-08-12 01:11:27","updated_at":"2025-08-12 01:12:10","vehicle_exit_driver_id":null},
+{"id":"9","type":"vehicle","plate":"123456","marca_vehiculo":null,"color_vehiculo":null,"tipo_vehiculo":null,"people_count":null,"full_name":"chofer","document":"123456","entry_at":"2025-08-12 01:14:13","entry_note":null,"vehicle_exit_at":"2025-08-12 01:35:57","exit_at":"2025-08-12 01:36:39","exit_note":null,"user_id":"1","created_at":"2025-08-12 01:14:13","updated_at":"2025-08-12 01:36:39","vehicle_exit_driver_id":null},
+{"id":"10","type":"vehicle","plate":"123456","marca_vehiculo":null,"color_vehiculo":null,"tipo_vehiculo":null,"people_count":null,"full_name":"cristian rojas","document":"4801734","entry_at":"2025-08-12 01:37:18","entry_note":null,"vehicle_exit_at":"2025-08-12 01:40:05","exit_at":"2025-08-12 01:40:05","exit_note":null,"user_id":"1","created_at":"2025-08-12 01:37:18","updated_at":"2025-08-12 01:40:05","vehicle_exit_driver_id":null},
+{"id":"11","type":"vehicle","plate":"123456","marca_vehiculo":null,"color_vehiculo":null,"tipo_vehiculo":null,"people_count":null,"full_name":"cristian rojas","document":"4801734","entry_at":"2025-08-12 01:37:42","entry_note":null,"vehicle_exit_at":"2025-08-12 01:40:14","exit_at":"2025-08-12 01:40:14","exit_note":null,"user_id":"1","created_at":"2025-08-12 01:37:42","updated_at":"2025-08-12 01:40:14","vehicle_exit_driver_id":null},
+{"id":"12","type":"pedestrian","plate":null,"marca_vehiculo":null,"color_vehiculo":null,"tipo_vehiculo":null,"people_count":null,"full_name":"Cristian Rojajs","document":"4802734","entry_at":"2025-08-12 02:11:42","entry_note":null,"vehicle_exit_at":null,"exit_at":"2025-08-12 02:11:51","exit_note":null,"user_id":"1","created_at":"2025-08-12 02:11:42","updated_at":"2025-08-12 02:11:51","vehicle_exit_driver_id":null},
+{"id":"13","type":"vehicle","plate":"123456","marca_vehiculo":null,"color_vehiculo":null,"tipo_vehiculo":null,"people_count":null,"full_name":"cristian rojas","document":"123456","entry_at":"2025-08-12 12:11:00","entry_note":null,"vehicle_exit_at":"2025-08-12 12:11:18","exit_at":"2025-08-12 12:11:18","exit_note":null,"user_id":"1","created_at":"2025-08-12 12:11:00","updated_at":"2025-08-12 12:11:18","vehicle_exit_driver_id":"13"},
+{"id":"14","type":"vehicle","plate":"QQQQQQ","marca_vehiculo":null,"color_vehiculo":null,"tipo_vehiculo":null,"people_count":null,"full_name":"juan","document":"123456","entry_at":"2025-08-12 12:33:43","entry_note":null,"vehicle_exit_at":"2025-08-12 17:05:02","exit_at":"2025-08-12 17:05:02","exit_note":null,"user_id":"1","created_at":"2025-08-12 12:33:43","updated_at":"2025-08-12 17:05:03","vehicle_exit_driver_id":"14"},
+{"id":"15","type":"vehicle","plate":"1234","marca_vehiculo":"rrr","color_vehiculo":"rrr","tipo_vehiculo":"moto","people_count":null,"full_name":"ffff","document":"1234","entry_at":"2025-08-12 17:05:29","entry_note":null,"vehicle_exit_at":"2025-08-12 23:08:18","exit_at":"2025-08-12 23:08:18","exit_note":"es plataforma bolt","user_id":"1","created_at":"2025-08-12 17:05:29","updated_at":"2025-08-12 23:08:18","vehicle_exit_driver_id":"16"},
+{"id":"16","type":"vehicle","plate":"ABC1234","marca_vehiculo":"toyota","color_vehiculo":"balnco","tipo_vehiculo":"auto","people_count":null,"full_name":"cristian rojas","document":"4801734","entry_at":"2025-08-12 23:05:45","entry_note":null,"vehicle_exit_at":"2025-08-12 23:06:38","exit_at":"2025-08-12 23:06:38","exit_note":null,"user_id":"3","created_at":"2025-08-12 23:05:45","updated_at":"2025-08-12 23:06:38","vehicle_exit_driver_id":"17"}
+]
+}
+,{"type":"table","name":"access_occupants","database":"vigilante","data":
+[
+
+]
+}
+,{"type":"table","name":"access_people","database":"vigilante","data":
+[
+{"id":"1","access_id":"5","full_name":"fffff","document":"123456","role":"pedestrian","is_driver":"0","gender":null,"entry_at":"2025-08-12 01:06:19","exit_at":"2025-08-12 01:06:49","created_at":"2025-08-12 01:06:19","updated_at":"2025-08-12 01:06:49"},
+{"id":"2","access_id":"6","full_name":"sdsdsd","document":"123456","role":"pedestrian","is_driver":"0","gender":null,"entry_at":"2025-08-12 01:09:29","exit_at":"2025-08-12 01:09:55","created_at":"2025-08-12 01:09:29","updated_at":"2025-08-12 01:09:55"},
+{"id":"3","access_id":"7","full_name":"dffd","document":"123455","role":"driver","is_driver":"1","gender":null,"entry_at":"2025-08-12 01:10:18","exit_at":"2025-08-12 01:11:03","created_at":"2025-08-12 01:10:18","updated_at":"2025-08-12 01:11:03"},
+{"id":"4","access_id":"7","full_name":"sqsqsqsq","document":"123456","role":"passenger","is_driver":"0","gender":null,"entry_at":"2025-08-12 01:10:18","exit_at":"2025-08-12 01:10:47","created_at":"2025-08-12 01:10:18","updated_at":"2025-08-12 01:10:47"},
+{"id":"5","access_id":"8","full_name":"chofer","document":"1234","role":"driver","is_driver":"1","gender":null,"entry_at":"2025-08-12 01:11:27","exit_at":"2025-08-12 01:12:10","created_at":"2025-08-12 01:11:27","updated_at":"2025-08-12 01:12:10"},
+{"id":"6","access_id":"8","full_name":"acompanha","document":"12345","role":"passenger","is_driver":"0","gender":null,"entry_at":"2025-08-12 01:11:27","exit_at":"2025-08-12 01:11:41","created_at":"2025-08-12 01:11:27","updated_at":"2025-08-12 01:11:41"},
+{"id":"7","access_id":"9","full_name":"chofer","document":"123456","role":"driver","is_driver":"1","gender":null,"entry_at":"2025-08-12 01:14:13","exit_at":"2025-08-12 01:36:39","created_at":"2025-08-12 01:14:13","updated_at":"2025-08-12 01:36:39"},
+{"id":"8","access_id":"9","full_name":"companha","document":"23456","role":"passenger","is_driver":"0","gender":null,"entry_at":"2025-08-12 01:14:13","exit_at":"2025-08-12 01:35:57","created_at":"2025-08-12 01:14:13","updated_at":"2025-08-12 01:35:57"},
+{"id":"9","access_id":"10","full_name":"cristian rojas","document":"4801734","role":"driver","is_driver":"1","gender":null,"entry_at":"2025-08-12 01:37:18","exit_at":"2025-08-12 01:40:05","created_at":"2025-08-12 01:37:18","updated_at":"2025-08-12 01:40:05"},
+{"id":"10","access_id":"11","full_name":"cristian rojas","document":"4801734","role":"driver","is_driver":"1","gender":null,"entry_at":"2025-08-12 01:37:42","exit_at":"2025-08-12 01:40:14","created_at":"2025-08-12 01:37:42","updated_at":"2025-08-12 01:40:14"},
+{"id":"11","access_id":"12","full_name":"Cristian Rojajs","document":"4802734","role":"pedestrian","is_driver":"0","gender":null,"entry_at":"2025-08-12 02:11:42","exit_at":"2025-08-12 02:11:51","created_at":"2025-08-12 02:11:42","updated_at":"2025-08-12 02:11:51"},
+{"id":"12","access_id":"13","full_name":"cristian rojas","document":"123456","role":"driver","is_driver":"1","gender":null,"entry_at":"2025-08-12 12:11:00","exit_at":"2025-08-12 12:11:18","created_at":"2025-08-12 12:11:00","updated_at":"2025-08-12 12:11:18"},
+{"id":"13","access_id":"13","full_name":"acompanhante","document":"1234567","role":"passenger","is_driver":"0","gender":null,"entry_at":"2025-08-12 12:11:00","exit_at":"2025-08-12 12:11:18","created_at":"2025-08-12 12:11:00","updated_at":"2025-08-12 12:11:18"},
+{"id":"14","access_id":"14","full_name":"juan","document":"123456","role":"driver","is_driver":"1","gender":null,"entry_at":"2025-08-12 12:33:43","exit_at":"2025-08-12 17:05:02","created_at":"2025-08-12 12:33:43","updated_at":"2025-08-12 17:05:02"},
+{"id":"15","access_id":"14","full_name":"ffffff","document":"333444","role":"passenger","is_driver":"0","gender":null,"entry_at":"2025-08-12 12:33:43","exit_at":"2025-08-12 17:05:02","created_at":"2025-08-12 12:33:43","updated_at":"2025-08-12 17:05:02"},
+{"id":"16","access_id":"15","full_name":"ffff","document":"1234","role":"driver","is_driver":"1","gender":"masculino","entry_at":"2025-08-12 17:05:29","exit_at":"2025-08-12 23:08:18","created_at":"2025-08-12 17:05:29","updated_at":"2025-08-12 23:08:18"},
+{"id":"17","access_id":"16","full_name":"cristian rojas","document":"4801734","role":"driver","is_driver":"1","gender":"masculino","entry_at":"2025-08-12 23:05:45","exit_at":"2025-08-12 23:06:38","created_at":"2025-08-12 23:05:45","updated_at":"2025-08-12 23:06:38"},
+{"id":"18","access_id":"16","full_name":"juan","document":"123456","role":"passenger","is_driver":"0","gender":"masculino","entry_at":"2025-08-12 23:05:45","exit_at":"2025-08-12 23:06:38","created_at":"2025-08-12 23:05:45","updated_at":"2025-08-12 23:06:38"}
+]
+}
+,{"type":"table","name":"cache","database":"vigilante","data":
+[
+
+]
+}
+,{"type":"table","name":"cache_locks","database":"vigilante","data":
+[
+
+]
+}
+,{"type":"table","name":"failed_jobs","database":"vigilante","data":
+[
+
+]
+}
+,{"type":"table","name":"jobs","database":"vigilante","data":
+[
+
+]
+}
+,{"type":"table","name":"job_batches","database":"vigilante","data":
+[
+
+]
+}
+,{"type":"table","name":"migrations","database":"vigilante","data":
+[
+{"id":"1","migration":"0001_01_01_000000_create_users_table","batch":"1"},
+{"id":"2","migration":"0001_01_01_000001_create_cache_table","batch":"1"},
+{"id":"3","migration":"0001_01_01_000002_create_jobs_table","batch":"1"},
+{"id":"4","migration":"2025_08_12_005254_create_accesses_table","batch":"2"},
+{"id":"5","migration":"2025_08_12_005333_create_access_occupants_table","batch":"2"},
+{"id":"6","migration":"2025_08_12_013623_create_permission_tables","batch":"3"},
+{"id":"7","migration":"2025_08_12_021006_add_is_active_to_users_table","batch":"4"},
+{"id":"8","migration":"2025_08_12_030742_create_access_people_table","batch":"5"},
+{"id":"9","migration":"2025_08_12_030842_add_vehicle_exit_at_to_accesses_table","batch":"5"},
+{"id":"10","migration":"2025_08_12_033258_add_notes_to_accesses_table","batch":"6"},
+{"id":"11","migration":"2025_08_12_000001_create_people_table","batch":"7"},
+{"id":"12","migration":"2025_08_12_000002_add_vehicle_fields_to_accesses_table","batch":"7"},
+{"id":"13","migration":"2025_08_12_000003_update_access_people_add_gender_and_unique","batch":"7"},
+{"id":"14","migration":"2025_08_12_000004_add_vehicle_exit_driver_to_accesses_table","batch":"8"},
+{"id":"15","migration":"2025_08_12_121815_add_vehiculo_and_sexo_to_accesos_table","batch":"9"}
+]
+}
+,{"type":"table","name":"model_has_permissions","database":"vigilante","data":
+[
+
+]
+}
+,{"type":"table","name":"model_has_roles","database":"vigilante","data":
+[
+{"role_id":"1","model_type":"App\\Models\\User","model_id":"4"},
+{"role_id":"3","model_type":"App\\Models\\User","model_id":"1"},
+{"role_id":"3","model_type":"App\\Models\\User","model_id":"2"},
+{"role_id":"3","model_type":"App\\Models\\User","model_id":"3"}
+]
+}
+,{"type":"table","name":"password_reset_tokens","database":"vigilante","data":
+[
+
+]
+}
+,{"type":"table","name":"people","database":"vigilante","data":
+[
+{"id":"1","full_name":"cristian rojas","document":"4801734","gender":"masculino","created_at":"2025-08-12 01:37:18","updated_at":"2025-08-12 01:37:18"},
+{"id":"2","full_name":"Cristian Rojajs","document":"4802734","gender":"masculino","created_at":"2025-08-12 02:11:42","updated_at":"2025-08-12 02:11:42"},
+{"id":"3","full_name":"juan","document":"123456","gender":"masculino","created_at":"2025-08-12 12:11:00","updated_at":"2025-08-12 12:33:43"},
+{"id":"4","full_name":"acompanhante","document":"1234567","gender":"masculino","created_at":"2025-08-12 12:11:00","updated_at":"2025-08-12 12:11:00"},
+{"id":"5","full_name":"ffffff","document":"333444","gender":"masculino","created_at":"2025-08-12 12:33:43","updated_at":"2025-08-12 12:33:43"},
+{"id":"6","full_name":"ffff","document":"1234","gender":"masculino","created_at":"2025-08-12 17:05:29","updated_at":"2025-08-12 17:05:29"}
+]
+}
+,{"type":"table","name":"permissions","database":"vigilante","data":
+[
+{"id":"1","name":"access.view","guard_name":"web","created_at":"2025-08-12 01:36:52","updated_at":"2025-08-12 01:36:52"},
+{"id":"2","name":"access.view.active","guard_name":"web","created_at":"2025-08-12 01:36:52","updated_at":"2025-08-12 01:36:52"},
+{"id":"3","name":"access.enter","guard_name":"web","created_at":"2025-08-12 01:36:52","updated_at":"2025-08-12 01:36:52"},
+{"id":"4","name":"access.exit","guard_name":"web","created_at":"2025-08-12 01:36:52","updated_at":"2025-08-12 01:36:52"},
+{"id":"5","name":"reports.view","guard_name":"web","created_at":"2025-08-12 01:36:52","updated_at":"2025-08-12 01:36:52"},
+{"id":"6","name":"users.manage","guard_name":"web","created_at":"2025-08-12 01:36:52","updated_at":"2025-08-12 01:36:52"},
+{"id":"7","name":"roles.manage","guard_name":"web","created_at":"2025-08-12 01:36:52","updated_at":"2025-08-12 01:36:52"},
+{"id":"8","name":"access.show","guard_name":"web","created_at":"2025-08-12 02:04:50","updated_at":"2025-08-12 02:04:50"}
+]
+}
+,{"type":"table","name":"roles","database":"vigilante","data":
+[
+{"id":"1","name":"guardia","guard_name":"web","created_at":"2025-08-12 01:36:52","updated_at":"2025-08-12 01:36:52"},
+{"id":"3","name":"admin","guard_name":"web","created_at":"2025-08-12 02:04:50","updated_at":"2025-08-12 02:04:50"}
+]
+}
+,{"type":"table","name":"role_has_permissions","database":"vigilante","data":
+[
+{"permission_id":"1","role_id":"1"},
+{"permission_id":"1","role_id":"3"},
+{"permission_id":"2","role_id":"1"},
+{"permission_id":"2","role_id":"3"},
+{"permission_id":"3","role_id":"1"},
+{"permission_id":"3","role_id":"3"},
+{"permission_id":"4","role_id":"1"},
+{"permission_id":"4","role_id":"3"},
+{"permission_id":"5","role_id":"3"},
+{"permission_id":"6","role_id":"3"},
+{"permission_id":"7","role_id":"3"},
+{"permission_id":"8","role_id":"1"},
+{"permission_id":"8","role_id":"3"}
+]
+}
+,{"type":"table","name":"sessions","database":"vigilante","data":
+[
+{"id":"1fkHZdNCMEoPIdXHNKzzzXOoH20rX68eRBwFpskd","user_id":"3","ip_address":"181.124.136.101","user_agent":"Mozilla\/5.0 (Linux; Android 10; K) AppleWebKit\/537.36 (KHTML, like Gecko) Chrome\/139.0.0.0 Mobile Safari\/537.36","payload":"YTo1OntzOjY6Il90b2tlbiI7czo0MDoiY3hTWm9HdE9JdTgxNjdLSlpGaW1zcmI5bUlWbXduRG4xNE9lcUE1eiI7czozOiJ1cmwiO2E6MDp7fXM6OToiX3ByZXZpb3VzIjthOjE6e3M6MzoidXJsIjtzOjM1OiJodHRwOi8vMTkwLjEwNC4xODUuMjQ5OjgwMDAvcmVzdW1lbiI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fXM6NTA6ImxvZ2luX3dlYl81OWJhMzZhZGRjMmIyZjk0MDE1ODBmMDE0YzdmNThlYTRlMzA5ODlkIjtpOjM7fQ==","last_activity":"1755046483"},
+{"id":"3zeShiwXKKvejwJjaOiAttzMDk14I1hOyoqxoQUU","user_id":null,"ip_address":"149.86.227.49","user_agent":"Hello World\/1.0","payload":"YTo0OntzOjY6Il90b2tlbiI7czo0MDoidUIxU2tYNlZIbG9SbXBHVEVHelNvejVnbzZjbFpQTjJtSGQwZzlnSCI7czozOiJ1cmwiO2E6MTp7czo4OiJpbnRlbmRlZCI7czoyNzoiaHR0cDovLzE5MC4xMDQuMTg1LjI0OTo4MDAwIjt9czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6Mjc6Imh0dHA6Ly8xOTAuMTA0LjE4NS4yNDk6ODAwMCI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=","last_activity":"1755085241"},
+{"id":"7TQ6AWktLBQ2xr6k6hn218NwbJMc5wVKhJ9OgskB","user_id":null,"ip_address":"127.0.0.1","user_agent":"WhatsApp\/2.23.20.0","payload":"YTo0OntzOjY6Il90b2tlbiI7czo0MDoiUHRDaDFUdTVPRXFJcElnYjIzTDY0Mm82N1FHQk5aTGZmcHNyRVpqayI7czozOiJ1cmwiO2E6MTp7czo4OiJpbnRlbmRlZCI7czozNDoiaHR0cDovLzBlM2E1YzVkMzViMS5uZ3Jvay1mcmVlLmFwcCI7fXM6OToiX3ByZXZpb3VzIjthOjE6e3M6MzoidXJsIjtzOjM0OiJodHRwOi8vMGUzYTVjNWQzNWIxLm5ncm9rLWZyZWUuYXBwIjt9czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319fQ==","last_activity":"1755028046"},
+{"id":"9io0JugzS6rHJHv6SM8zhqO6EFkLay7Tbsnbj2Ae","user_id":null,"ip_address":"5.181.2.18","user_agent":"Mozilla\/5.0 zgrab\/0.x","payload":"YTozOntzOjY6Il90b2tlbiI7czo0MDoiOXpHblhoT2tHUDA4RFNZcVVlR2tNT1U2OGhYNkRRQVhhODdqSHJwSCI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MzM6Imh0dHA6Ly8xOTAuMTA0LjE4NS4yNDk6ODAwMC9sb2dpbiI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=","last_activity":"1755077005"},
+{"id":"9oc21EyEPSBuakCcUPPS2Ve83FUMNak95WF2Utc2","user_id":null,"ip_address":"190.104.185.249","user_agent":"Mozilla\/5.0 (X11; Linux x86_64) AppleWebKit\/537.36 (KHTML, like Gecko) Chrome\/139.0.0.0 Safari\/537.36","payload":"YTo0OntzOjY6Il90b2tlbiI7czo0MDoiZ0ozOVZ1WE9kckIxcVJwY240NHlsQ2dPaFZmS1ZuWmNCT2hkQzhScSI7czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319czozOiJ1cmwiO2E6MTp7czo4OiJpbnRlbmRlZCI7czoyNzoiaHR0cDovLzE5MC4xMDQuMTg1LjI0OTo4MDAwIjt9czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MzM6Imh0dHA6Ly8xOTAuMTA0LjE4NS4yNDk6ODAwMC9sb2dpbiI7fX0=","last_activity":"1755087224"},
+{"id":"a49AbHdEpstEq9axCaJJjSmgEocGN8Y148fwwqmi","user_id":null,"ip_address":"127.0.0.1","user_agent":"Mozilla\/5.0 (X11; Linux x86_64) AppleWebKit\/537.36 (KHTML, like Gecko) Chrome\/139.0.0.0 Safari\/537.36","payload":"YTo0OntzOjY6Il90b2tlbiI7czo0MDoiQ3RTNmZFdUZTSW1Bd0lEYkFqNk5ucVpCZERucGFKSjJFdnpTdkVnRSI7czozOiJ1cmwiO2E6MTp7czo4OiJpbnRlbmRlZCI7czozNDoiaHR0cDovLzk2ODNiN2M3MTRiNy5uZ3Jvay1mcmVlLmFwcCI7fXM6OToiX3ByZXZpb3VzIjthOjE6e3M6MzoidXJsIjtzOjQwOiJodHRwOi8vOTY4M2I3YzcxNGI3Lm5ncm9rLWZyZWUuYXBwL2xvZ2luIjt9czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319fQ==","last_activity":"1755028316"},
+{"id":"Aecq4sRGVgSryF8TI5yW2JisRqxKBriQMW3MwUYY","user_id":null,"ip_address":"149.86.227.49","user_agent":"Hello World\/1.0","payload":"YTo0OntzOjY6Il90b2tlbiI7czo0MDoiMkNwazBrNEwwajNIOXRkVEJQQ1I0VjN2aGVRT1UwY0hEdEhkMVVSUCI7czozOiJ1cmwiO2E6MTp7czo4OiJpbnRlbmRlZCI7czoyNzoiaHR0cDovLzE5MC4xMDQuMTg1LjI0OTo4MDAwIjt9czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6Mjc6Imh0dHA6Ly8xOTAuMTA0LjE4NS4yNDk6ODAwMCI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=","last_activity":"1755088011"},
+{"id":"B4TZrI6l6MFoipwU2x3P4FlOolupJItdQB41lVWV","user_id":null,"ip_address":"149.86.227.49","user_agent":"Hello World\/1.0","payload":"YTo0OntzOjY6Il90b2tlbiI7czo0MDoiR0FTUTlQU0xDSDI1ZHc4dFJudnFUREhiYVV5T1FWSzZPWWF6b2ZmTiI7czozOiJ1cmwiO2E6MTp7czo4OiJpbnRlbmRlZCI7czoyNzoiaHR0cDovLzE5MC4xMDQuMTg1LjI0OTo4MDAwIjt9czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6Mjc6Imh0dHA6Ly8xOTAuMTA0LjE4NS4yNDk6ODAwMCI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=","last_activity":"1755082621"},
+{"id":"BznhQ36FSbO6fngFDyYLS39LxxTbeKnSgVeMpKYC","user_id":null,"ip_address":"149.86.227.49","user_agent":"Hello World\/1.0","payload":"YTo0OntzOjY6Il90b2tlbiI7czo0MDoiUG9DU0ZyQ3pZanRiaXdBb3JiRHowSWdKQVV1bEFsS2JhNkl3emRFaiI7czozOiJ1cmwiO2E6MTp7czo4OiJpbnRlbmRlZCI7czoyNzoiaHR0cDovLzE5MC4xMDQuMTg1LjI0OTo4MDAwIjt9czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6Mjc6Imh0dHA6Ly8xOTAuMTA0LjE4NS4yNDk6ODAwMCI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=","last_activity":"1755062400"},
+{"id":"CIyZrF4770tR91QeOF1hhxIyveRRVDsarWZyZSTY","user_id":null,"ip_address":"149.86.227.49","user_agent":"Hello World\/1.0","payload":"YTo0OntzOjY6Il90b2tlbiI7czo0MDoiTlpWS0ZTam4wUk9Ca29VN1VrWjlja25vclRMcGxEYjJGb0VRdWhscyI7czozOiJ1cmwiO2E6MTp7czo4OiJpbnRlbmRlZCI7czoyNzoiaHR0cDovLzE5MC4xMDQuMTg1LjI0OTo4MDAwIjt9czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6Mjc6Imh0dHA6Ly8xOTAuMTA0LjE4NS4yNDk6ODAwMCI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=","last_activity":"1755058353"},
+{"id":"CN5HjzmVLHRlVUVxE86TXEFn7zSPAbAfWfIie1g6","user_id":null,"ip_address":"149.86.227.49","user_agent":"Hello World\/1.0","payload":"YTo0OntzOjY6Il90b2tlbiI7czo0MDoiRnEwM2Nob1hzZGE0ZlNqajE1MG1pT0FadlBPSzhoeVpCV0NaTHVCeiI7czozOiJ1cmwiO2E6MTp7czo4OiJpbnRlbmRlZCI7czoyNzoiaHR0cDovLzE5MC4xMDQuMTg1LjI0OTo4MDAwIjt9czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6Mjc6Imh0dHA6Ly8xOTAuMTA0LjE4NS4yNDk6ODAwMCI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=","last_activity":"1755074873"},
+{"id":"dlG3hn2kvtCsyEnfWHvjyjM490Kxy2ATl1jKN7Js","user_id":null,"ip_address":"206.168.34.43","user_agent":"Mozilla\/5.0 (compatible; CensysInspect\/1.1; +https:\/\/about.censys.io\/)","payload":"YTo0OntzOjY6Il90b2tlbiI7czo0MDoiMlZTUFB2eEZ0Rnd0SlpNVHZxRFlnSW1aTWYxNGRYVVJQaEhuUlJabyI7czozOiJ1cmwiO2E6MTp7czo4OiJpbnRlbmRlZCI7czoyNzoiaHR0cDovLzE5MC4xMDQuMTg1LjI0OTo4MDAwIjt9czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6Mjc6Imh0dHA6Ly8xOTAuMTA0LjE4NS4yNDk6ODAwMCI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=","last_activity":"1755072883"},
+{"id":"E7Tse1kz0NeLhoEMBhYYO8MSv9l7b3nk96Zc3MPi","user_id":null,"ip_address":"147.185.132.79","user_agent":"Hello from Palo Alto Networks, find out more about our scans in https:\/\/docs-cortex.paloaltonetworks.com\/r\/1\/Cortex-Xpanse\/Scanning-activity","payload":"YTozOntzOjY6Il90b2tlbiI7czo0MDoiZWFmeHNBTWJZQlYzbVhLa0QyczRGeW85WVNlNDJMVGMzcEFEMng4MSI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MzM6Imh0dHA6Ly8xOTAuMTA0LjE4NS4yNDk6ODAwMC9sb2dpbiI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=","last_activity":"1755053301"},
+{"id":"eDxDVPJXCTC0rWNsKWoG5rioEF4JpFXgi4isrt4p","user_id":"3","ip_address":"127.0.0.1","user_agent":"Mozilla\/5.0 (X11; Linux x86_64) AppleWebKit\/537.36 (KHTML, like Gecko) Chrome\/139.0.0.0 Safari\/537.36","payload":"YTo1OntzOjY6Il90b2tlbiI7czo0MDoiMlV3dVhBS2NnYlJ3MDRha2phd0ZQSTdjSGNDbDJtdlRDTjQ4bThCSiI7czozOiJ1cmwiO2E6MDp7fXM6OToiX3ByZXZpb3VzIjthOjE6e3M6MzoidXJsIjtzOjMzOiJodHRwOi8vMTI3LjAuMC4xOjgwMDAvYWRtaW4vcm9sZXMiO31zOjY6Il9mbGFzaCI7YToyOntzOjM6Im9sZCI7YTowOnt9czozOiJuZXciO2E6MDp7fX1zOjUwOiJsb2dpbl93ZWJfNTliYTM2YWRkYzJiMmY5NDAxNTgwZjAxNGM3ZjU4ZWE0ZTMwOTg5ZCI7aTozO30=","last_activity":"1755050956"},
+{"id":"eXKGzkQeQgwdD6uMSp8KEQwtaAiP2RXGk6zHx1vn","user_id":null,"ip_address":"127.0.0.1","user_agent":"Mozilla\/5.0 (X11; Linux x86_64) AppleWebKit\/537.36 (KHTML, like Gecko) Chrome\/139.0.0.0 Safari\/537.36","payload":"YTo0OntzOjY6Il90b2tlbiI7czo0MDoibTd4NUhLdkFWSmdnOUs1VXVXaUdzV1VJN29uaGd1MVlkbENqaU1jbiI7czozOiJ1cmwiO2E6MTp7czo4OiJpbnRlbmRlZCI7czoyMToiaHR0cDovLzEyNy4wLjAuMTo4MDAwIjt9czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MjE6Imh0dHA6Ly8xMjcuMC4wLjE6ODAwMCI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=","last_activity":"1755050648"},
+{"id":"fYpMFdA16765yS47m05kh9P9IVBQjhkWQPYYXAoD","user_id":null,"ip_address":"206.168.34.43","user_agent":"","payload":"YTo0OntzOjY6Il90b2tlbiI7czo0MDoiV1hPU3BMVm92QkIyN25BNzltazBhUXFMQldwQnZlUjJMTmJwazVPOCI7czozOiJ1cmwiO2E6MTp7czo4OiJpbnRlbmRlZCI7czoyNzoiaHR0cDovLzE5MC4xMDQuMTg1LjI0OTo4MDAwIjt9czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6Mjc6Imh0dHA6Ly8xOTAuMTA0LjE4NS4yNDk6ODAwMCI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=","last_activity":"1755072877"},
+{"id":"hPn3n4eL9YgCCpWEqUlMZxxEqo86vy4PczjCGmRS","user_id":null,"ip_address":"149.86.227.49","user_agent":"Hello World\/1.0","payload":"YTo0OntzOjY6Il90b2tlbiI7czo0MDoidTNsSGVVU1ZmV05ONjlIT1JUUkZ5bUNFclY0V0N1Qk5BOHhuVlRReiI7czozOiJ1cmwiO2E6MTp7czo4OiJpbnRlbmRlZCI7czoyNzoiaHR0cDovLzE5MC4xMDQuMTg1LjI0OTo4MDAwIjt9czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6Mjc6Imh0dHA6Ly8xOTAuMTA0LjE4NS4yNDk6ODAwMCI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=","last_activity":"1755068079"},
+{"id":"IBDuQQlbWqSo9lJD5KLxvDPbmDBevEoVEnekY0Qd","user_id":"3","ip_address":"181.124.136.101","user_agent":"Mozilla\/5.0 (Linux; Android 10; K) AppleWebKit\/537.36 (KHTML, like Gecko) Chrome\/139.0.0.0 Mobile Safari\/537.36","payload":"YTo1OntzOjY6Il90b2tlbiI7czo0MDoiYjN1ODBrcjJxbXhZckJTNDJKRUZpTHpnVkZCYjRoeHhsbkpuZkJLRCI7czozOiJ1cmwiO2E6MDp7fXM6OToiX3ByZXZpb3VzIjthOjE6e3M6MzoidXJsIjtzOjM1OiJodHRwOi8vMTkwLjEwNC4xODUuMjQ5OjgwMDAvcmVzdW1lbiI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fXM6NTA6ImxvZ2luX3dlYl81OWJhMzZhZGRjMmIyZjk0MDE1ODBmMDE0YzdmNThlYTRlMzA5ODlkIjtpOjM7fQ==","last_activity":"1755046925"},
+{"id":"mtfVBQJjLeMHehGV6WE6TYp2UuPR1xZtAyPcfgk8","user_id":null,"ip_address":"5.181.2.18","user_agent":"Mozilla\/5.0 zgrab\/0.x","payload":"YTo0OntzOjY6Il90b2tlbiI7czo0MDoiTGV3anRCS3dOQXRUMkxzVUN3TUJNOWhJSk5DQ0ZJcTZsaUttb2o5VCI7czozOiJ1cmwiO2E6MTp7czo4OiJpbnRlbmRlZCI7czoyNzoiaHR0cDovLzE5MC4xMDQuMTg1LjI0OTo4MDAwIjt9czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6Mjc6Imh0dHA6Ly8xOTAuMTA0LjE4NS4yNDk6ODAwMCI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=","last_activity":"1755077004"},
+{"id":"MUQrbvmIzySl9cKOBNhI1OYKemOy9A2Iv6tNrwdZ","user_id":null,"ip_address":"149.86.227.49","user_agent":"Hello World\/1.0","payload":"YTo0OntzOjY6Il90b2tlbiI7czo0MDoielpJS3F3ZFR0UEdra2p3dEQxNm8wb3UxWUp6OHFQcGhkTVB5OHd2ZiI7czozOiJ1cmwiO2E6MTp7czo4OiJpbnRlbmRlZCI7czoyNzoiaHR0cDovLzE5MC4xMDQuMTg1LjI0OTo4MDAwIjt9czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6Mjc6Imh0dHA6Ly8xOTAuMTA0LjE4NS4yNDk6ODAwMCI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=","last_activity":"1755084012"},
+{"id":"OGxrSqLrUxk1UAUUrK9FidsAoS9rdcqmyrVKBU18","user_id":"1","ip_address":"127.0.0.1","user_agent":"Mozilla\/5.0 (X11; Linux x86_64) AppleWebKit\/537.36 (KHTML, like Gecko) Chrome\/139.0.0.0 Safari\/537.36","payload":"YTo1OntzOjY6Il90b2tlbiI7czo0MDoidGlRUnliWEtCeVNhdGx2Q2lVV1o3STZ5cGxwUkQxbzZUc1pMczQ5RyI7czozOiJ1cmwiO2E6MDp7fXM6OToiX3ByZXZpb3VzIjthOjE6e3M6MzoidXJsIjtzOjQ0OiJodHRwOi8vMC4wLjAuMDo4MDAwL3NhbGlkYS9idXNjYXI\/cGxhdGU9MTIzNCI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fXM6NTA6ImxvZ2luX3dlYl81OWJhMzZhZGRjMmIyZjk0MDE1ODBmMDE0YzdmNThlYTRlMzA5ODlkIjtpOjE7fQ==","last_activity":"1755029149"},
+{"id":"oi1aU9Fn04CImaWd84K1HwA3ih9wtfdzNNw2gbS7","user_id":null,"ip_address":"147.185.132.79","user_agent":"Hello from Palo Alto Networks, find out more about our scans in https:\/\/docs-cortex.paloaltonetworks.com\/r\/1\/Cortex-Xpanse\/Scanning-activity","payload":"YTo0OntzOjY6Il90b2tlbiI7czo0MDoiYjZtODNLVXBaTU9ySDJtMlJqWW1tdjFGRjJ5SGdjQTlpYWg3WkNtQSI7czozOiJ1cmwiO2E6MTp7czo4OiJpbnRlbmRlZCI7czoyNzoiaHR0cDovLzE5MC4xMDQuMTg1LjI0OTo4MDAwIjt9czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6Mjc6Imh0dHA6Ly8xOTAuMTA0LjE4NS4yNDk6ODAwMCI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=","last_activity":"1755053300"},
+{"id":"OuuRAxGqJqXatehwJxTW0WyHJ1f7zCzYf7X54JKF","user_id":null,"ip_address":"149.86.227.49","user_agent":"Hello World\/1.0","payload":"YTo0OntzOjY6Il90b2tlbiI7czo0MDoiRjlaTnVRS3dZeWZFT1Nxa1FEOW9zSFB0WTQxcWNqS0s5SWprR1FlWCI7czozOiJ1cmwiO2E6MTp7czo4OiJpbnRlbmRlZCI7czoyNzoiaHR0cDovLzE5MC4xMDQuMTg1LjI0OTo4MDAwIjt9czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6Mjc6Imh0dHA6Ly8xOTAuMTA0LjE4NS4yNDk6ODAwMCI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=","last_activity":"1755065629"},
+{"id":"Q44suyqlZvgwUnpqGkYsrxa1vRutrrYJ1YL8Skna","user_id":null,"ip_address":"149.86.227.49","user_agent":"Hello World\/1.0","payload":"YTo0OntzOjY6Il90b2tlbiI7czo0MDoicGFiejRMRVhXczlxcjNXSWhKWGZNWGVxZDFoR1NHcEo0Z3hERmRSQSI7czozOiJ1cmwiO2E6MTp7czo4OiJpbnRlbmRlZCI7czoyNzoiaHR0cDovLzE5MC4xMDQuMTg1LjI0OTo4MDAwIjt9czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6Mjc6Imh0dHA6Ly8xOTAuMTA0LjE4NS4yNDk6ODAwMCI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=","last_activity":"1755052911"},
+{"id":"qbOEDrfTeNKBFOQtnKAfeKIBw6e7qQDMTcLsDg1M","user_id":null,"ip_address":"127.0.0.1","user_agent":"WhatsApp\/2.23.20.0","payload":"YTo0OntzOjY6Il90b2tlbiI7czo0MDoiM0dYYjFoUWhNdWFkRnhIZWVKSGphUk1hSXdZcUUzY01JSndkVkYxMCI7czozOiJ1cmwiO2E6MTp7czo4OiJpbnRlbmRlZCI7czozNDoiaHR0cDovLzBlM2E1YzVkMzViMS5uZ3Jvay1mcmVlLmFwcCI7fXM6OToiX3ByZXZpb3VzIjthOjE6e3M6MzoidXJsIjtzOjQwOiJodHRwOi8vMGUzYTVjNWQzNWIxLm5ncm9rLWZyZWUuYXBwL2xvZ2luIjt9czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319fQ==","last_activity":"1755028046"},
+{"id":"qmgK7ymr1ou8SFoN6Gotsp4taOvcu6hfQmyntNN9","user_id":null,"ip_address":"45.161.239.20","user_agent":"Mozilla\/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit\/537.36 (KHTML, like Gecko) Chrome\/138.0.0.0 Safari\/537.36","payload":"YTozOntzOjY6Il90b2tlbiI7czo0MDoiZDhYblpjOXhsVk1JajNFbkYyUGZFcG02YXFNOE5OOTJUSVJ2RWlmWSI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MzM6Imh0dHA6Ly8xOTAuMTA0LjE4NS4yNDk6ODAwMC9sb2dpbiI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=","last_activity":"1755087197"},
+{"id":"qoK5sPLbUirhiK8M82LzpacfuIREv2avKKHb2okl","user_id":null,"ip_address":"206.168.34.43","user_agent":"Mozilla\/5.0 (compatible; CensysInspect\/1.1; +https:\/\/about.censys.io\/)","payload":"YTozOntzOjY6Il90b2tlbiI7czo0MDoiY3gxUTI0Y1JkaE00cFBiY0lKdG9ub2NQZ0loQ08wcU1jbUdQUVh6SiI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MzM6Imh0dHA6Ly8xOTAuMTA0LjE4NS4yNDk6ODAwMC9sb2dpbiI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=","last_activity":"1755072978"},
+{"id":"RwE0B5FttNuhDdELkCX9GObF5EI7A0UPG2cx8zX7","user_id":null,"ip_address":"165.232.73.237","user_agent":"Mozilla\/5.0 zgrab\/0.x","payload":"YTo0OntzOjY6Il90b2tlbiI7czo0MDoiVzEycFpCYm82dnZUajJnRE9HeVpzNXU2UlRTZWFkRVdUQ1M1dkFFbCI7czozOiJ1cmwiO2E6MTp7czo4OiJpbnRlbmRlZCI7czoyNzoiaHR0cDovLzE5MC4xMDQuMTg1LjI0OTo4MDAwIjt9czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6Mjc6Imh0dHA6Ly8xOTAuMTA0LjE4NS4yNDk6ODAwMCI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=","last_activity":"1755077691"},
+{"id":"TAOSWn0eCsTAQmoYsqfdvIOPwnN5Vu0t6frtqjJz","user_id":null,"ip_address":"20.168.107.40","user_agent":"Mozilla\/5.0 zgrab\/0.x","payload":"YTo0OntzOjY6Il90b2tlbiI7czo0MDoiQkdjOHFmakJwWDdVWmlIRldXelc0ZWp3OVlSVUoyOXlvdHVLUEs2OCI7czozOiJ1cmwiO2E6MTp7czo4OiJpbnRlbmRlZCI7czoyNzoiaHR0cDovLzE5MC4xMDQuMTg1LjI0OTo4MDAwIjt9czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6Mjc6Imh0dHA6Ly8xOTAuMTA0LjE4NS4yNDk6ODAwMCI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=","last_activity":"1755063852"},
+{"id":"UejXe5CjAQwnxVDzcDIjNOQJVekfjBO55cxQbaOk","user_id":null,"ip_address":"149.86.227.49","user_agent":"Hello World\/1.0","payload":"YTo0OntzOjY6Il90b2tlbiI7czo0MDoiMHVXS2JBNW1lSVVVQjJEUk1SN1BsZE1SOEttbmxNUG1EeDdYbVQzMCI7czozOiJ1cmwiO2E6MTp7czo4OiJpbnRlbmRlZCI7czoyNzoiaHR0cDovLzE5MC4xMDQuMTg1LjI0OTo4MDAwIjt9czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6Mjc6Imh0dHA6Ly8xOTAuMTA0LjE4NS4yNDk6ODAwMCI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=","last_activity":"1755060452"},
+{"id":"uqEn7ZuUUJ4aYfM5Ji3F7sE1OB2X5g5fHfz9A9Pa","user_id":"3","ip_address":"127.0.0.1","user_agent":"Mozilla\/5.0 (Linux; Android 10; K) AppleWebKit\/537.36 (KHTML, like Gecko) Chrome\/139.0.0.0 Mobile Safari\/537.36","payload":"YTo1OntzOjY6Il90b2tlbiI7czo0MDoiSWJjM1lCbTRKaWlIZHJjYWNTcGR6MWJ4aUQzRXR0eDZRMXpBTjBDRSI7czozOiJ1cmwiO2E6MDp7fXM6OToiX3ByZXZpb3VzIjthOjE6e3M6MzoidXJsIjtzOjQyOiJodHRwOi8vMGUzYTVjNWQzNWIxLm5ncm9rLWZyZWUuYXBwL3Jlc3VtZW4iO31zOjY6Il9mbGFzaCI7YToyOntzOjM6Im9sZCI7YTowOnt9czozOiJuZXciO2E6MDp7fX1zOjUwOiJsb2dpbl93ZWJfNTliYTM2YWRkYzJiMmY5NDAxNTgwZjAxNGM3ZjU4ZWE0ZTMwOTg5ZCI7aTozO30=","last_activity":"1755028126"},
+{"id":"uuBsHHpFFlOtyrkHynhWwe1BZuhHXglj5yzVd0RV","user_id":null,"ip_address":"190.104.185.249","user_agent":"Mozilla\/5.0 (X11; Linux x86_64) AppleWebKit\/537.36 (KHTML, like Gecko) Chrome\/139.0.0.0 Safari\/537.36","payload":"YTo0OntzOjY6Il90b2tlbiI7czo0MDoiZ1FRNEtjb2dvNUtUNGl4Ykk1M0txV1Z6Z05iSzBlVUQ3aTVnZ0ZtUyI7czozOiJ1cmwiO2E6MTp7czo4OiJpbnRlbmRlZCI7czoyNzoiaHR0cDovLzE5MC4xMDQuMTg1LjI0OTo4MDAwIjt9czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MzM6Imh0dHA6Ly8xOTAuMTA0LjE4NS4yNDk6ODAwMC9sb2dpbiI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=","last_activity":"1755051624"},
+{"id":"VFB1WLYowMEi0Q3YJMG4GgYdkaQYD6jxD5ooMtGg","user_id":"1","ip_address":"127.0.0.1","user_agent":"Mozilla\/5.0 (X11; Linux x86_64) AppleWebKit\/537.36 (KHTML, like Gecko) Chrome\/139.0.0.0 Safari\/537.36","payload":"YTo1OntzOjY6Il90b2tlbiI7czo0MDoiQ0wzcmszbFVUcTJodmpvczg1Q3VNdGdaR1ZEdHdhQjh4WktmTEkzdCI7czozOiJ1cmwiO2E6MDp7fXM6OToiX3ByZXZpb3VzIjthOjE6e3M6MzoidXJsIjtzOjI3OiJodHRwOi8vMC4wLjAuMDo4MDAwL3Jlc3VtZW4iO31zOjY6Il9mbGFzaCI7YToyOntzOjM6Im9sZCI7YTowOnt9czozOiJuZXciO2E6MDp7fX1zOjUwOiJsb2dpbl93ZWJfNTliYTM2YWRkYzJiMmY5NDAxNTgwZjAxNGM3ZjU4ZWE0ZTMwOTg5ZCI7aToxO30=","last_activity":"1755046178"},
+{"id":"wygSz6TGUr6i5dOkzgMcXx4uV5gy3xGrxXvihlgu","user_id":"3","ip_address":"181.124.136.101","user_agent":"Mozilla\/5.0 (Linux; Android 10; K) AppleWebKit\/537.36 (KHTML, like Gecko) Chrome\/139.0.0.0 Mobile Safari\/537.36","payload":"YTo1OntzOjY6Il90b2tlbiI7czo0MDoiVXNySnFQZXo5UzR0bmQyUmJNWm1vZDE2Y0RXSEtMbHA0RkpPbVRESSI7czozOiJ1cmwiO2E6MDp7fXM6OToiX3ByZXZpb3VzIjthOjE6e3M6MzoidXJsIjtzOjM1OiJodHRwOi8vMTkwLjEwNC4xODUuMjQ5OjgwMDAvcmVzdW1lbiI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fXM6NTA6ImxvZ2luX3dlYl81OWJhMzZhZGRjMmIyZjk0MDE1ODBmMDE0YzdmNThlYTRlMzA5ODlkIjtpOjM7fQ==","last_activity":"1755046154"},
+{"id":"ZbgIQWSHmSz6eCZ3ZZDLck6zdlFVELeQ7mIN68lC","user_id":null,"ip_address":"127.0.0.1","user_agent":"Mozilla\/5.0 (X11; Linux x86_64) AppleWebKit\/537.36 (KHTML, like Gecko) Chrome\/139.0.0.0 Safari\/537.36","payload":"YTo0OntzOjY6Il90b2tlbiI7czo0MDoiYUF1cUE5WDQ5OEd4VUJSeW5nWllUN3ZyOFhrOW9ZeHRZQW9CUU9DQyI7czozOiJ1cmwiO2E6MTp7czo4OiJpbnRlbmRlZCI7czoyMToiaHR0cDovLzEyNy4wLjAuMTo4MDAwIjt9czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6Mjc6Imh0dHA6Ly8xMjcuMC4wLjE6ODAwMC9sb2dpbiI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=","last_activity":"1755049483"},
+{"id":"zGXCJ4zAmrvdY12tqeO1R8vP0Bbw14fzK79CvX5s","user_id":null,"ip_address":"149.86.227.49","user_agent":"Hello World\/1.0","payload":"YTo0OntzOjY6Il90b2tlbiI7czo0MDoiWFdZdkFSaThxc0toeHN0RHJtazVtM1RwQktFYmYybjZXZ0Jub2tlTCI7czozOiJ1cmwiO2E6MTp7czo4OiJpbnRlbmRlZCI7czoyNzoiaHR0cDovLzE5MC4xMDQuMTg1LjI0OTo4MDAwIjt9czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6Mjc6Imh0dHA6Ly8xOTAuMTA0LjE4NS4yNDk6ODAwMCI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=","last_activity":"1755070864"},
+{"id":"ZwE5bOXRnWRVPrM1hAYmMHvVjkcyZ8oNw4cghKPb","user_id":null,"ip_address":"149.86.227.49","user_agent":"Hello World\/1.0","payload":"YTo0OntzOjY6Il90b2tlbiI7czo0MDoiclhCQ21tcmhObWQ2RjVXU21VUWtmbXBia3VvZHBlM3A1NFkxVlljSyI7czozOiJ1cmwiO2E6MTp7czo4OiJpbnRlbmRlZCI7czoyNzoiaHR0cDovLzE5MC4xMDQuMTg1LjI0OTo4MDAwIjt9czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6Mjc6Imh0dHA6Ly8xOTAuMTA0LjE4NS4yNDk6ODAwMCI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=","last_activity":"1755078331"}
+]
+}
+,{"type":"table","name":"users","database":"vigilante","data":
+[
+{"id":"1","name":"Cristian Dario Rojas Orue","email":"graplications@gmail.com","email_verified_at":null,"password":"$2y$12$EDXy5sO997LTwUEs7tMmnebURggMusGnjKmWE9IrYVKnB.tbP.aXm","is_active":"1","remember_token":null,"created_at":"2025-08-12 00:50:33","updated_at":"2025-08-12 02:55:10"},
+{"id":"2","name":"Carlos Echague","email":"carlos@carlos.com","email_verified_at":null,"password":"$2y$12$VPWWmHXEniIL\/1MHTaDulu90RC7mhuTzbvfRGDrJV9jF6WRAyRqOC","is_active":"1","remember_token":null,"created_at":"2025-08-12 02:05:10","updated_at":"2025-08-12 10:07:17"},
+{"id":"3","name":"Administrador General","email":"admin@admin.com","email_verified_at":null,"password":"$2y$12$GKu2OITh8fN2fphlN6SSfeAXMoJd5m4vvlCJfcmn93OVRzVxr65BK","is_active":"1","remember_token":"ePrtYIVoL2X6kcW9OZ0Z0Yicvj1AF6032RTeaBBD8TF393RF2hzupiewup7l","created_at":"2025-08-12 10:21:26","updated_at":"2025-08-12 10:21:26"},
+{"id":"4","name":"guardia 1","email":"a@a.com","email_verified_at":null,"password":"$2y$12$GU81RUfIML2BhP7b68kPKOvzNuLgKto0dRsL6pmBvV22FmYXlKfRa","is_active":"1","remember_token":null,"created_at":"2025-08-12 23:07:35","updated_at":"2025-08-12 23:07:35"}
+]
+}
+]

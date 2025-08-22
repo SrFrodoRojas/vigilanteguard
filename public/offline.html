@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="theme-color" content="#ff2d20" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <title>Sin conexión - Vigilante</title>
+        <link rel="icon" href="/logo.png" type="image/png" />
+
+        <style>
+            body {
+                margin: 0;
+                background: linear-gradient(
+                    172deg,
+                    #181722 20%,
+                    #ff2d20 100%,
+                    #8d7171 100%
+                );
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                font-family: "Lato", sans-serif;
+                color: #fff;
+                flex-direction: column;
+            }
+            .container {
+                text-align: center;
+                max-width: 320px;
+            }
+            .text {
+                font-weight: 300;
+                font-size: 45px;
+                margin-bottom: 40px;
+                animation: fade-in-out 2.5s infinite;
+            }
+            .status {
+                font-size: 18px;
+                margin-bottom: 25px;
+                min-height: 22px;
+            }
+            .box {
+                width: 240px;
+                height: 150px;
+                position: relative;
+                margin: 0 auto 35px auto;
+            }
+            .comp,
+            .server {
+                border: 3px solid #fff;
+            }
+            .comp {
+                width: 80px;
+                height: 55px;
+                border-radius: 5px;
+                position: absolute;
+                top: 0;
+            }
+            .comp:after {
+                content: "";
+                position: absolute;
+                top: 19px;
+                left: 5px;
+                width: 65px;
+                height: 10px;
+                border-radius: 360px;
+                border: 3px solid #fff;
+            }
+            .loader {
+                position: absolute;
+                top: 26px;
+                left: 12px;
+                width: 8px;
+                height: 7px;
+                background: #fff;
+                border-radius: 8%;
+                animation: loader 5s infinite linear 0.5s;
+                display: none;
+            }
+            .con {
+                position: absolute;
+                top: 28px;
+                left: 85px;
+                width: 100px;
+                height: 3px;
+                background: #fff;
+            }
+            .byte {
+                position: absolute;
+                top: 25px;
+                left: 80px;
+                width: 9px;
+                height: 9px;
+                background: #fff;
+                border-radius: 50%;
+                opacity: 0;
+                animation: byte_animate 5s infinite linear 0.5s;
+                z-index: 6;
+            }
+            .server {
+                width: 35px;
+                height: 65px;
+                border-radius: 360px;
+                background: #eaecf4;
+                transform: rotateX(58deg);
+                position: absolute;
+                top: 6px;
+                left: 185px;
+                z-index: 1;
+            }
+            .server:before {
+                content: "";
+                position: absolute;
+                top: -47px;
+                left: -3px;
+                width: 35px;
+                height: 35px;
+                background: #d3bbba;
+                border-radius: 50%;
+                border: 3px solid #fff;
+                z-index: 20;
+            }
+            .server:after {
+                content: "";
+                position: absolute;
+                top: -26px;
+                left: -3px;
+                width: 35px;
+                height: 40px;
+                background: #fff;
+                border-left: 3px solid #fff;
+                border-right: 3px solid #fff;
+                z-index: 17;
+            }
+
+            button#checkBtn {
+                background: #ff2d20;
+                border: none;
+                border-radius: 5px;
+                padding: 12px 25px;
+                font-size: 18px;
+                color: #fff;
+                cursor: pointer;
+                transition: background-color 0.3s ease;
+                box-shadow: 0 3px 8px rgb(255 45 32 / 0.5);
+            }
+            button#checkBtn:hover {
+                background: #dc408a;
+            }
+
+            @keyframes byte_animate {
+                0% {
+                    opacity: 0;
+                    left: 80px;
+                }
+                4% {
+                    opacity: 1;
+                }
+                46% {
+                    opacity: 1;
+                }
+                50% {
+                    opacity: 0;
+                    left: 185px;
+                }
+                54% {
+                    opacity: 1;
+                }
+                96% {
+                    opacity: 1;
+                }
+                100% {
+                    opacity: 0;
+                    left: 80px;
+                }
+            }
+            @keyframes loader {
+                0% {
+                    width: 8px;
+                }
+                100% {
+                    width: 63px;
+                }
+            }
+            @keyframes fade-in-out {
+                0%,
+                100% {
+                    opacity: 1;
+                }
+                50% {
+                    opacity: 0;
+                }
+            }
+            @media (max-width: 400px) {
+                .text {
+                    font-size: 28px;
+                    padding: 0 20px;
+                }
+                .box {
+                    transform: scale(0.8);
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container" role="alert" aria-live="assertive">
+            <div class="text">SIN CONEXIÓN</div>
+            <div class="status" id="statusText">Esperando verificación...</div>
+            <div class="box">
+                <div class="comp"></div>
+                <div class="loader" id="loader"></div>
+                <div class="con"></div>
+                <div class="byte"></div>
+                <div class="server"></div>
+            </div>
+            <button id="checkBtn">Verificar conexión ahora</button>
+        </div>
+
+        <script>
+            const statusText = document.getElementById("statusText");
+            const loader = document.getElementById("loader");
+            const checkBtn = document.getElementById("checkBtn");
+
+            async function checkOnlineStatus() {
+                statusText.textContent = "Probando conexión...";
+                loader.style.display = "block";
+                try {
+                    const response = await fetch("/manifest.json", {
+                        cache: "no-store",
+                    });
+                    if (response.ok) {
+                        statusText.textContent =
+                            "Servidor online, recargando...";
+                        setTimeout(() => location.reload(), 800);
+                    } else {
+                        statusText.textContent = `Error HTTP: ${response.status}. Sigue offline.`;
+                    }
+                } catch (error) {
+                    statusText.textContent =
+                        "Servidor offline, sigue sin conexión.";
+                } finally {
+                    loader.style.display = "none";
+                }
+            }
+
+            setInterval(checkOnlineStatus, 10000);
+            checkBtn.addEventListener("click", checkOnlineStatus);
+        </script>
+    </body>
+</html>
