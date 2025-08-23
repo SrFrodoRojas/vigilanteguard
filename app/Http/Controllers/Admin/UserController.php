@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Role;
+use Illuminate\Validation\Rule;
+
 
 class UserController extends Controller
 {
@@ -118,37 +120,90 @@ class UserController extends Controller
         return view('admin.users.create', compact('roles', 'branches'));
     }
 
-    public function store(Request $request)
+    public function store(\Illuminate\Http\Request $request)
     {
         $data = $request->validate([
             'name'      => ['required', 'string', 'max:120'],
-            'email'     => ['required', 'email', 'max:120', 'unique:users,email'],
-            'password'  => ['required', 'string', 'min:8', 'confirmed'],
-            'role'      => ['required', 'string', 'exists:roles,name'],
-            'branch_id' => ['nullable', 'required_if:role,guardia', 'exists:branches,id'],
-            'is_active' => ['nullable'],
-            'phone'     => ['nullable', 'string', 'max:25', 'regex:/^[0-9\-\+\s\(\)]+$/'],
-            'avatar'    => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'], // <-- NUEVO
+            'email'     => ['required', 'email', 'max:255', 'unique:users,email'],
+            'phone'     => ['nullable', 'string', 'max:25'],
+            'branch_id' => ['nullable', 'integer'],
+            'is_active' => ['nullable'], // checkbox
+            'password'  => ['required', 'string', 'min:8', 'max:255'],
+            'role'      => ['nullable', 'string', 'max:50'], // nombre del rol (Spatie)
+            'avatar'    => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ]);
 
-        $avatarPath = null;
+        $payload = [
+            'name'      => $data['name'],
+            'email'     => $data['email'],
+            'phone'     => $data['phone'] ?? null,
+            'branch_id' => $data['branch_id'] ?? null,
+            'is_active' => $request->boolean('is_active') ? '1' : '0', // tu columna es varchar NOT NULL
+            'password'  => Hash::make($data['password']),
+        ];
+
         if ($request->hasFile('avatar')) {
-            $avatarPath = $request->file('avatar')->store('avatars', 'public');
+            $path                   = $request->file('avatar')->store('avatars', 'public');
+            $payload['avatar_path'] = $path;
         }
 
-        $user = User::create([
-            'name'        => $data['name'],
-            'email'       => $data['email'],
-            'password'    => Hash::make($data['password']),
-            'branch_id'   => $data['role'] === 'guardia' ? $data['branch_id'] : null,
-            'is_active'   => $request->boolean('is_active'),
-            'phone'       => $this->normalizePhone($request->input('phone')),
-            'avatar_path' => $avatarPath,
+        $user = User::create($payload);
+
+        if (! empty($data['role']) && method_exists($user, 'syncRoles')) {
+            $user->syncRoles([$data['role']]);
+        }
+
+        return redirect()->route('admin.users.index')->with('ok', 'Usuario creado.');
+    }
+
+    public function update(\Illuminate\Http\Request $request, User $user)
+    {
+        $data = $request->validate([
+            'name'          => ['required', 'string', 'max:120'],
+            'email'         => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+            'phone'         => ['nullable', 'string', 'max:25'],
+            'branch_id'     => ['nullable', 'integer'],
+            'is_active'     => ['nullable'],
+            'password'      => ['nullable', 'string', 'min:8', 'max:255'],
+            'role'          => ['nullable', 'string', 'max:50'],
+            'avatar'        => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'remove_avatar' => ['nullable', 'boolean'],
         ]);
 
-        $user->syncRoles([$data['role']]);
+        $payload = [
+            'name'      => $data['name'],
+            'email'     => $data['email'],
+            'phone'     => $data['phone'] ?? null,
+            'branch_id' => $data['branch_id'] ?? null,
+            'is_active' => $request->boolean('is_active') ? '1' : '0',
+        ];
 
-        return redirect()->route('admin.users.index')->with('success', 'Usuario creado.');
+        if (! empty($data['password'])) {
+            $payload['password'] = Hash::make($data['password']);
+        }
+
+        // Avatar: reemplazo/limpieza
+        if ($request->hasFile('avatar')) {
+            if ($user->avatar_path) {
+                Storage::disk('public')->delete($user->avatar_path);
+            }
+            $payload['avatar_path'] = $request->file('avatar')->store('avatars', 'public');
+        } elseif ($request->boolean('remove_avatar') && $user->avatar_path) {
+            Storage::disk('public')->delete($user->avatar_path);
+            $payload['avatar_path'] = null;
+        }
+
+        $user->update($payload);
+
+        if (method_exists($user, 'syncRoles')) {
+            if (! empty($data['role'])) {
+                $user->syncRoles([$data['role']]);
+            } else {
+                $user->syncRoles([]); // sin rol
+            }
+        }
+
+        return redirect()->route('admin.users.index')->with('ok', 'Usuario actualizado.');
     }
 
     public function edit(User $user)
@@ -158,73 +213,6 @@ class UserController extends Controller
         $branches    = Branch::orderBy('name')->get();
 
         return view('admin.users.edit', compact('user', 'roles', 'currentRole', 'branches'));
-    }
-
-    public function update(Request $request, User $user)
-    {
-        $data = $request->validate([
-            'name'          => ['required', 'string', 'max:255'],
-            'email'         => ['required', 'email', 'max:255', 'unique:users,email,' . $user->id],
-            'role'          => ['required', 'string', 'exists:roles,name'],
-            'branch_id'     => ['nullable', 'required_if:role,guardia', 'exists:branches,id'],
-            'is_active'     => ['nullable', 'boolean'],
-            'phone'         => ['nullable', 'string', 'max:25', 'regex:/^[0-9\-\+\s\(\)]+$/'],
-            'password'      => ['nullable', 'string', 'min:8', 'confirmed'],
-            'avatar'        => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'], // <-- NUEVO
-            'remove_avatar' => ['nullable', 'boolean'],                                      // <-- NUEVO
-        ]);
-
-        // proteger último admin y admin fijo (idéntico a tu lógica)
-        $isRemovingAdmin = $user->hasRole('admin') && $data['role'] !== 'admin';
-        if ($isRemovingAdmin) {
-            $admins = User::role('admin')->count();
-            if ($admins <= 1) {
-                return back()->withErrors('No se puede quitar el rol admin del último administrador.')->withInput();
-            }
-        }
-        if ($user->email === 'admin@admin.com') {
-            if ($data['role'] !== 'admin') {
-                return back()->withErrors('No se puede cambiar el rol de este administrador protegido.')->withInput();
-            }
-            if ($request->filled('is_active') && ! $request->boolean('is_active')) {
-                return back()->withErrors('No se puede desactivar este administrador protegido.')->withInput();
-            }
-        }
-
-        $user->name      = $data['name'];
-        $user->email     = $data['email'];
-        $user->branch_id = $data['role'] === 'guardia' ? $data['branch_id'] : null;
-
-        if ($request->has('is_active')) {
-            $user->is_active = (bool) $request->boolean('is_active');
-        }
-
-        if ($request->filled('password')) {
-            $user->password = Hash::make($request->password);
-        }
-
-        $user->phone = $this->normalizePhone($request->input('phone'));
-
-        // --- Avatar: borrar o reemplazar ---
-        if ($request->boolean('remove_avatar') && $user->avatar_path) {
-            Storage::disk('public')->delete($user->avatar_path);
-            $user->avatar_path = null;
-        }
-        if ($request->hasFile('avatar')) {
-            // si sube nuevo, borro el anterior
-            if ($user->avatar_path) {
-                Storage::disk('public')->delete($user->avatar_path);
-            }
-            $user->avatar_path = $request->file('avatar')->store('avatars', 'public');
-        }
-
-        $user->save();
-
-        $user->syncRoles([$data['role']]);
-
-        app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
-
-        return redirect()->route('admin.users.index')->with('success', 'Usuario actualizado.');
     }
 
     public function destroy(User $user)
