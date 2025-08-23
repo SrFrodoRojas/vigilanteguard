@@ -13,65 +13,79 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class ReportsController extends Controller
 {
-    public function index(Request $request)
+    public function index(\Illuminate\Http\Request $request)
     {
-        $tz      = 'America/Asuncion';
-        $user    = auth()->user();
-        $isAdmin = $user->hasRole('admin');
+        $user    = $request->user();
+        $isAdmin = $user && method_exists($user, 'hasRole') ? $user->hasRole('admin') : false;
 
-        $request->validate([
-            'from'      => ['nullable', 'date_format:Y-m-d'],
-            'to'        => ['nullable', 'date_format:Y-m-d'],
-            'branch_id' => ['nullable', 'integer', 'exists:branches,id'],
+        // 1) Validación segura (rango de fechas y filtros básicos)
+        $data = $request->validate([
+            'from'      => ['nullable', 'date'],
+            'to'        => ['nullable', 'date', 'after_or_equal:from'],
+            'branch_id' => ['nullable', 'integer'],
+            'type'      => ['nullable', 'in:vehicle,pedestrian'],
+            'status'    => ['nullable', 'in:inside,closed'],
+            'q'         => ['nullable', 'string', 'max:120'],
+            'page'      => ['nullable', 'integer'],
         ]);
 
-        $from = $request->input('from');
-        $to   = $request->input('to');
+        $from     = $data['from'] ?? null;
+        $to       = $data['to'] ?? null;
+        $branchId = $data['branch_id'] ?? null;
+        $type     = $data['type'] ?? null;
+        $status   = $data['status'] ?? null;
+        $q        = trim($data['q'] ?? '');
 
-        $fromStart = $from ? Carbon::createFromFormat('Y-m-d', $from, $tz)->startOfDay()
-        : Carbon::now($tz)->startOfDay();
-        $toEnd = $to ? Carbon::createFromFormat('Y-m-d', $to, $tz)->endOfDay()
-        : Carbon::now($tz)->endOfDay();
+        // 2) Query base con scopes típicos
+        $qAccess = \App\Models\Access::query()
+            ->with(['user', 'branch'])
+            ->withCount(['people as inside_count' => fn($qq) => $qq->whereNull('exit_at')])
+            ->when($from, fn($qq) => $qq->where('entry_at', '>=', \Illuminate\Support\Carbon::parse($from)->startOfDay()))
+            ->when($to, fn($qq) => $qq->where('entry_at', '<=', \Illuminate\Support\Carbon::parse($to)->endOfDay()))
+            ->when($type, fn($qq) => $qq->where('type', $type))
+            ->when($status === 'inside', fn($qq) => $qq->whereNull('exit_at'))
+            ->when($status === 'closed', fn($qq) => $qq->whereNotNull('exit_at'))
+            ->when($q, function ($qq) use ($q) {
+                $qq->where(function ($x) use ($q) {
+                    $x->where('full_name', 'like', "%{$q}%")
+                        ->orWhere('document', 'like', "%{$q}%")
+                        ->orWhere('plate', 'like', "%{$q}%");
+                });
+            });
 
-        if ($toEnd->lt($fromStart)) {
-            return back()->withErrors(['to' => 'La fecha "Hasta" no puede ser menor que "Desde".'])->withInput();
+        // Scope por sucursal (no admin ve solo su sucursal)
+        if (! $isAdmin && $user) {
+            $qAccess->where('branch_id', $user->branch_id);
+        } elseif ($isAdmin && $branchId) {
+            $qAccess->where('branch_id', $branchId);
         }
 
-        $branchId = $request->input('branch_id');
+        // 3) KPIs (consultas baratas, aprovechan índices recién creados)
+        $kpi = [
+            'total'       => (clone $qAccess)->count('*'),
+            'inside'      => (clone $qAccess)->whereNull('exit_at')->count('*'),
+            'closed'      => (clone $qAccess)->whereNotNull('exit_at')->count('*'),
+            'vehicles'    => (clone $qAccess)->where('type', 'vehicle')->count('*'),
+            'pedestrians' => (clone $qAccess)->where('type', 'pedestrian')->count('*'),
+        ];
 
-        $query = Access::query()
-            ->with(['user', 'branch'])
-            ->withCount(['people as inside_count' => function ($q) {
-                $q->whereNull('exit_at');
-            }])
-            ->when(! $isAdmin, fn($q) => $q->where('branch_id', $user->branch_id))
-            ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
-            ->where(function ($q) use ($fromStart, $toEnd) {
-                $q->whereBetween('entry_at', [$fromStart, $toEnd])
-                    ->orWhereBetween('exit_at', [$fromStart, $toEnd]);
-            })
-            ->orderByDesc('entry_at');
+        // 4) Listado paginado
+        $accesses = $qAccess->latest('entry_at')->paginate(20)->withQueryString();
 
-        $total     = (clone $query)->count();
-        $vehiculos = (clone $query)->where('type', 'vehicle')->count();
-        $peatones  = (clone $query)->where('type', 'pedestrian')->count();
+        // 5) Datos para filtros (solo admins)
+        $branches = $isAdmin ? \App\Models\Branch::orderBy('name')->get() : collect();
 
-        $promedioMin = (int) Access::whereNotNull('exit_at')
-            ->when(! $isAdmin, fn($q) => $q->where('branch_id', $user->branch_id))
-            ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
-            ->whereBetween('exit_at', [$fromStart, $toEnd])
-            ->select(DB::raw('AVG(TIMESTAMPDIFF(MINUTE, entry_at, exit_at)) as avgmin'))
-            ->value('avgmin') ?? 0;
-
-        $accesses = $query->paginate(20)->appends($request->only('from', 'to', 'branch_id'));
-
-        // para filtros en la vista
-        $branches = $isAdmin ? Branch::orderBy('name')->get(['id', 'name']) : collect();
-
-        return view('reportes.index', compact(
-            'from', 'to', 'branchId', 'branches',
-            'accesses', 'total', 'vehiculos', 'peatones', 'promedioMin'
-        ));
+        return view('reportes.index', [
+            'accesses' => $accesses,
+            'kpi'      => $kpi,
+            'branches' => $branches,
+            'filters'  => [
+                'from'      => $from, 'to'     => $to,
+                'branch_id' => $branchId,
+                'type'      => $type, 'status' => $status, 'q' => $q,
+            ],
+            'isAdmin'  => $isAdmin,
+        ]);
     }
 
     public function exportExcel(Request $request)

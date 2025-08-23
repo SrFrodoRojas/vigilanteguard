@@ -2,9 +2,6 @@
 namespace App\Http\Controllers\Patrol;
 
 use App\Http\Controllers\Controller;
-use App\Models\Checkpoint;
-use App\Models\CheckpointScan;
-use App\Models\PatrolAssignment;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 
@@ -60,157 +57,165 @@ class ScanController extends Controller
     /**
      * Registrar un paso por el checkpoint (requiere QR + GPS).
      */
-    public function store(Request $request)
+    public function store(\Illuminate\Http\Request $request)
     {
-        
-        // Validación básica del flujo QR + GPS
-        $data = $request->validate(
-            [
-                'qr_token'      => 'required|uuid',
-                'assignment_id' => 'required|integer|exists:patrol_assignments,id',
-                'lat'           => 'required|numeric',
-                'lng'           => 'required|numeric',
-                'accuracy_m'    => 'nullable|integer|min:0',
-            ],
-            [],
-            ['lat' => 'latitud', 'lng' => 'longitud']
-        );
+        $data = $request->validate([
+            'patrol_assignment_id' => ['required', 'integer', 'exists:patrol_assignments,id'],
+            'checkpoint_id'        => ['required', 'integer', 'exists:checkpoints,id'],
+            'lat'                  => ['nullable', 'numeric', 'between:-90,90'],
+            'lng'                  => ['nullable', 'numeric', 'between:-180,180'],
+            'accuracy_m'           => ['nullable', 'integer', 'min:0', 'max:5000'],
+            'device_info'          => ['nullable', 'string', 'max:255'],
+        ]);
 
-        // Resolver checkpoint por token
-        $checkpoint = Checkpoint::with('route')
-            ->where('qr_token', $data['qr_token'])
-            ->first();
+                                       // ======= Parámetros de política (ajusta a gusto) =======
+        $modoEstrictoradio    = false; // true => no guarda si estás fuera de radio
+        $modoEstrictoAccuracy = false; // true => no guarda si accuracy > $accuracyMax
+        $accuracyMax          = 50;    // metros; por encima de esto es "baja precisión"
+                                       // =======================================================
 
-        if (! $checkpoint) {
-            return back()->withErrors('QR desconocido o inválido.');
+        // 1) Entidades
+        $assignment = \App\Models\PatrolAssignment::findOrFail($data['patrol_assignment_id']);
+        $checkpoint = \App\Models\Checkpoint::findOrFail($data['checkpoint_id']);
+
+        // 2) Autorización / coherencia
+        if ($assignment->guard_id !== $request->user()->id) {
+            abort(403, 'Esta asignación no te pertenece.');
+        }
+        if ($assignment->patrol_route_id !== $checkpoint->patrol_route_id) {
+            abort(422, 'El checkpoint no pertenece a la ruta de esta asignación.');
+        }
+        if (in_array($assignment->status, ['cancelled', 'missed', 'completed'], true)) {
+            return back()->with('warn', 'La asignación no está activa.');
         }
 
-        // Resolver asignación: debe ser del usuario y de la ruta del checkpoint
-        $assignment = PatrolAssignment::where('id', $data['assignment_id'])
-            ->where('guard_id', auth()->id())
-            ->where('patrol_route_id', $checkpoint->patrol_route_id)
-            ->first();
-
-        if (! $assignment) {
-            return back()->withErrors('No tenés una patrulla activa para esta ruta.');
+        // 2.1) Requiere GPS si la ruta lo pide
+        $requiereGps = (int) ($checkpoint->route?->qr_required ?? 1) === 1;
+        if ($requiereGps && (is_null($data['lat']) || is_null($data['lng']))) {
+            return back()->with('warn', 'Este checkpoint requiere GPS: habilita la ubicación e intenta de nuevo.');
         }
 
-        // Policy (PatrolAssignmentPolicy@update)
-        $this->authorize('update', $assignment);
-
-        // Validar ventana horaria
-        $now = now();
-        if (! ($assignment->scheduled_start <= $now && $now <= $assignment->scheduled_end)) {
-            return back()->withErrors('Estás fuera del horario programado de la patrulla.');
-        }
-
-        // Evitar duplicados de este punto en esta asignación
-        $already = CheckpointScan::where('patrol_assignment_id', $assignment->id)
+        // 3) Evitar doble escaneo (pre-chequeo)
+        $already = \App\Models\CheckpointScan::where('patrol_assignment_id', $assignment->id)
             ->where('checkpoint_id', $checkpoint->id)
             ->exists();
-
         if ($already) {
-            return back()->withErrors('Este punto ya fue registrado en esta patrulla.');
+            return back()->with('warn', 'Este checkpoint ya fue escaneado para esta asignación.');
         }
 
-                                               // Distancia y verificación por radio
-        $route           = $checkpoint->route; // tiene min_radius_m y qr_required (si lo configuraste)
-        $effectiveRadius = max((int) $checkpoint->radius_m, (int) ($route->min_radius_m ?? 20));
-
-        [$distanceM, $verified] = $this->evaluateDistance(
-            (float) $checkpoint->latitude,
-            (float) $checkpoint->longitude,
-            (float) $data['lat'],
-            (float) $data['lng'],
-            $effectiveRadius
-        );
-
-        // Aviso por precisión pobre
-        if (! empty($data['accuracy_m']) && $data['accuracy_m'] > 200) {
-            session()->flash('warning', 'La precisión del GPS es baja (± ' . (int) $data['accuracy_m'] . ' m).');
+        // 4) Distancia y verificación
+        $distance = null;
+        if (! is_null($data['lat']) && ! is_null($data['lng'])) {
+            $distance = $this->haversine(
+                (float) $data['lat'], (float) $data['lng'],
+                (float) $checkpoint->latitude, (float) $checkpoint->longitude
+            );
         }
 
-        // Anti-fraude: salto/velocidad vs último scan del guardia
-        $lastScan = CheckpointScan::whereHas('assignment', function ($q) {
-            $q->where('guard_id', auth()->id());
-        })
-            ->latest('scanned_at')
-            ->first();
+        // Radio efectivo: mayor entre radio del checkpoint y mínimo de la ruta
+        $radioMinRuta = (int) ($checkpoint->route->min_radius_m ?? 0);
+        $radioEff     = max((int) $checkpoint->radius_m, $radioMinRuta);
 
-        $jumpM         = null;
-        $speedMps      = null;
-        $suspect       = false;
-        $suspectReason = null;
+        // Política de accuracy
+        $accuracy     = $data['accuracy_m'] ?? null;
+        $accuracyBaja = $requiereGps && ! is_null($accuracy) && $accuracy > $accuracyMax;
 
-        if ($lastScan && $lastScan->lat && $lastScan->lng) {
-            $dist = $this->haversineM((float) $lastScan->lat, (float) $lastScan->lng, (float) $data['lat'], (float) $data['lng']);
-            $dt   = max(1, $now->diffInSeconds($lastScan->scanned_at));
-            $spd  = (int) round($dist / $dt);
+        // Si es estricto por accuracy, no guardamos con precisión pobre
+        if ($modoEstrictoAccuracy && $accuracyBaja) {
+            return back()->with('warn', "Precisión GPS insuficiente (>{$accuracyMax} m). Acércate y reintenta.");
+        }
 
-            $jumpM    = (int) round($dist);
-            $speedMps = $spd;
+        // Verificado solo si dentro del radio efectivo y sin accuracy baja (en modo no estricto, accuracy baja => no verificado)
+        $verified = (! is_null($distance) && $distance <= $radioEff && ! ($accuracyBaja)) ? 1 : 0;
 
-            // Reglas: salto > 5km en ≤60s o velocidad > 120km/h (~33 m/s)
-            if (($dist >= 5000 && $dt <= 60) || $spd > 33) {
-                $suspect       = true;
-                $suspectReason = ($dist >= 5000 && $dt <= 60)
-                ? 'jump_gt_5km_in_1min'
-                : 'speed_gt_120kmh';
+        // 4.1) Modo estricto de radio: si está activo, bloquea guardado fuera de radio
+        if ($modoEstrictoradio) {
+            if (is_null($distance)) {
+                return back()->with('warn', 'Checkpoint requiere GPS válido.');
+            }
+            if ($distance > $radioEff) {
+                return back()->with('warn', 'Fuera de radio: acércate al checkpoint y vuelve a escanear.');
             }
         }
 
-        // Guardar scan
-        CheckpointScan::create([
-            'patrol_assignment_id' => $assignment->id,
-            'checkpoint_id'        => $checkpoint->id,
-            'scanned_at'           => $now,
-            'lat'                  => $data['lat'],
-            'lng'                  => $data['lng'],
-            'distance_m'           => $distanceM,
-            'accuracy_m'           => $data['accuracy_m'] ?? null,
-            'device_info'          => substr($request->userAgent() ?? '', 0, 255),
-            'verified'             => (bool) $verified,
-            'source_ip'            => $request->ip(),
+        // 5) Anti-fraude velocidad/salto
+        $prev = \App\Models\CheckpointScan::where('patrol_assignment_id', $assignment->id)
+            ->latest('scanned_at')->first();
 
-            // anti-fraude
-            'speed_mps'            => $speedMps,
-            'jump_m'               => $jumpM,
-            'suspect'              => $suspect,
-            'suspect_reason'       => $suspectReason,
-        ]);
+        $speedMps = null;
+        $jumpM    = null;
+        $suspect  = 0;
+        $reason   = null;
 
-        // Actualizar estado de la asignación
-        $total = $assignment->route?->checkpoints()->count() ?? 0;
-        $done  = $assignment->scans()->count();
+        if (
+            $prev &&
+            ! is_null($data['lat']) && ! is_null($data['lng']) &&
+            ! is_null($prev->lat) && ! is_null($prev->lng)
+        ) {
+            $dt       = max(1, abs(now()->diffInSeconds($prev->scanned_at)));
+            $distPrev = $this->haversine((float) $data['lat'], (float) $data['lng'], (float) $prev->lat, (float) $prev->lng);
+            $speedMps = (int) round($distPrev / $dt);
+            $jumpM    = (int) round($distPrev);
 
-        if ($total > 0 && $done >= $total) {
-            $assignment->update(['status' => 'completed']);
-        } elseif ($assignment->status === 'scheduled') {
-            $assignment->update(['status' => 'in_progress']);
+            if ($speedMps > 15 || ($jumpM > 150 && $dt < 10)) {
+                $suspect = 1;
+                $reason  = $speedMps > 15 ? 'speed' : 'jump';
+            }
         }
 
-        return redirect()
-            ->route('patrol.index')
-            ->with('success', $verified ? 'Checkpoint verificado.' : 'Checkpoint registrado fuera de radio (revisión).');
+        // 6) Guardar con transacción (manejo de carrera)
+        try {
+            \Illuminate\Support\Facades\DB::transaction(function () use ($request, $assignment, $checkpoint, $data, $distance, $verified, $speedMps, $jumpM, $suspect, $reason) {
+                \App\Models\CheckpointScan::create([
+                    'patrol_assignment_id' => $assignment->id,
+                    'checkpoint_id'        => $checkpoint->id,
+                    'scanned_at'           => now(),
+                    'lat'                  => $data['lat'] ?? null,
+                    'lng'                  => $data['lng'] ?? null,
+                    'distance_m'           => is_null($distance) ? null : (int) round($distance),
+                    'accuracy_m'           => $data['accuracy_m'] ?? null,
+                    'device_info'          => $data['device_info'] ?? null,
+                    'verified'             => $verified,
+                    'source_ip'            => $request->ip(),
+                    'speed_mps'            => $speedMps,
+                    'jump_m'               => $jumpM,
+                    'suspect'              => $suspect,
+                    'suspect_reason'       => $reason,
+                ]);
+
+                if ($assignment->status === 'scheduled') {
+                    $assignment->status = 'in_progress';
+                    $assignment->save();
+                }
+            }, 1);
+        } catch (\Illuminate\Database\QueryException $e) {
+            if (($e->errorInfo[1] ?? null) === 1062) {
+                return back()->with('warn', 'Este checkpoint ya fue escaneado para esta asignación.');
+            }
+            throw $e;
+        }
+
+        // 7) Mensaje final (si accuracy fue baja y no se bloqueó, queda como warn/no verificado)
+        if ($verified === 1) {
+            return back()->with('ok', 'Checkpoint verificado.');
+        }
+        if ($accuracyBaja) {
+            return back()->with('warn', "Baja precisión GPS (>{$accuracyMax} m). Escaneo guardado como no verificado.");
+        }
+        return back()->with('warn', 'Fuera de radio, escaneo guardado como no verificado.');
     }
 
-    // --------------------------------------
-    // Utils
-    // --------------------------------------
-
-    private function evaluateDistance(float $latCk, float $lngCk, float $lat, float $lng, int $radiusM): array
+/** Distancia Haversine en metros */
+    private function haversine(float $lat1, float $lon1, float $lat2, float $lon2): float
     {
-        $d = $this->haversineM($latCk, $lngCk, $lat, $lng);
-        return [$d, $d <= $radiusM];
+        $R    = 6371000; // metros
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLon = deg2rad($lon2 - $lon1);
+        $a    = sin($dLat / 2) * sin($dLat / 2) +
+        cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+        sin($dLon / 2) * sin($dLon / 2);
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+        return $R * $c;
     }
 
-    private function haversineM(float $lat1, float $lng1, float $lat2, float $lng2): int
-    {
-        $R     = 6371000; // m
-        $toRad = fn($x) => $x * M_PI / 180;
-        $dLat  = $toRad($lat2 - $lat1);
-        $dLng  = $toRad($lng2 - $lng1);
-        $a     = sin($dLat / 2) ** 2 + cos($toRad($lat1)) * cos($toRad($lat2)) * sin($dLng / 2) ** 2;
-        return (int) round(2 * $R * atan2(sqrt($a), sqrt(1 - $a)));
-    }
 }
