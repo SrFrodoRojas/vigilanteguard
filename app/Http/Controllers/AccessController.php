@@ -3,66 +3,59 @@ namespace App\Http\Controllers;
 
 use App\Models\Access;
 use App\Models\AccessPerson;
+use App\Models\Branch;
 use App\Models\Person;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 
 class AccessController extends Controller
 {
-    /*
-     |------------------------------------------------------------------
-     |  LISTADOS
-     |------------------------------------------------------------------
-     */
+    /* ==========================
+     * LISTADOS / VISTAS
+     * ========================== */
 
-    // Listado general
-    public function index()
+    /** GET: /accesos (listado combinado de vehículos y peatones, con filtros) */
+    public function index(Request $request)
     {
-        $user    = auth()->user();
-        $isAdmin = $user->hasRole('admin');
+        $user    = $request->user();
+        $isAdmin = $user && method_exists($user, 'hasRole') ? $user->hasRole('admin') : false;
 
-                                            // ====== Parámetros Vehículos ======
-        $qVeh      = request('q_veh');      // búsqueda por nombre/email/doc/placa
-        $branchVeh = request('branch_veh'); // sucursal para admin
-        $statusVeh = request('status_veh'); // inside|closed|pending
-        $fromVeh   = request('from_veh');   // YYYY-MM-DD
-        $toVeh     = request('to_veh');     // YYYY-MM-DD
+        // Filtros vehículos
+        $qVeh      = $request->input('q_veh');
+        $branchVeh = $request->input('branch_veh');
+        $statusVeh = $request->input('status_veh'); // inside|closed|pending|null
+        $fromVeh   = $request->input('from_veh');
+        $toVeh     = $request->input('to_veh');
 
-        // ====== Parámetros Peatones ======
-        $qPed      = request('q_ped');
-        $branchPed = request('branch_ped');
-        $statusPed = request('status_ped');
-        $fromPed   = request('from_ped');
-        $toPed     = request('to_ped');
+        // Filtros peatones
+        $qPed      = $request->input('q_ped');
+        $branchPed = $request->input('branch_ped');
+        $statusPed = $request->input('status_ped'); // inside|closed|pending|null
+        $fromPed   = $request->input('from_ped');
+        $toPed     = $request->input('to_ped');
 
-        // Helper para rango de fechas (entry_at)
         $applyDateRange = function ($q, $from, $to) {
             if ($from) {
-                $q->where('entry_at', '>=', \Carbon\Carbon::parse($from)->startOfDay());
+                $q->where('entry_at', '>=', Carbon::parse($from)->startOfDay());
             }
             if ($to) {
-                $q->where('entry_at', '<=', \Carbon\Carbon::parse($to)->endOfDay());
+                $q->where('entry_at', '<=', Carbon::parse($to)->endOfDay());
             }
         };
 
-        // ====== Query base por rol (scoping sucursal para no-admin) ======
         $baseScope = function ($q) use ($user, $isAdmin) {
-            if (! $isAdmin) {
+            if (! $isAdmin && $user) {
                 $q->where('branch_id', $user->branch_id);
             }
         };
 
-        // ====== VEHÍCULOS ======
-        $vehicles = \App\Models\Access::query()
+        // Vehículos
+        $vehicles = Access::query()
             ->where('type', 'vehicle')
             ->where($baseScope)
             ->with(['user', 'branch'])
-            ->withCount(['people as inside_count' => function ($q) {
-                $q->whereNull('exit_at');
-            }])
+            ->withCount(['people as inside_count' => fn($q) => $q->whereNull('exit_at')])
             ->when($qVeh, function ($q) use ($qVeh) {
                 $term = trim($qVeh);
                 $q->where(function ($qq) use ($term) {
@@ -75,20 +68,16 @@ class AccessController extends Controller
             ->when($statusVeh === 'inside', fn($q) => $q->whereHas('people', fn($qq) => $qq->whereNull('exit_at')))
             ->when($statusVeh === 'closed', fn($q) => $q->whereNotNull('exit_at'))
             ->when($statusVeh === 'pending', fn($q) => $q->whereNull('exit_at')->whereDoesntHave('people', fn($qq) => $qq->whereNull('exit_at')))
-            ->when($fromVeh || $toVeh, fn($q) => $q->where(function ($qq) use ($applyDateRange, $fromVeh, $toVeh) {
-                $applyDateRange($qq, $fromVeh, $toVeh);
-            }))
+            ->when($fromVeh || $toVeh, fn($q) => $q->where(fn($qq) => $applyDateRange($qq, $fromVeh, $toVeh)))
             ->latest('entry_at')
             ->paginate(10, ['*'], 'veh_page');
 
-        // ====== PEATONES ======
-        $pedestrians = \App\Models\Access::query()
+        // Peatones
+        $pedestrians = Access::query()
             ->where('type', 'pedestrian')
             ->where($baseScope)
             ->with(['user', 'branch'])
-            ->withCount(['people as inside_count' => function ($q) {
-                $q->whereNull('exit_at');
-            }])
+            ->withCount(['people as inside_count' => fn($q) => $q->whereNull('exit_at')])
             ->when($qPed, function ($q) use ($qPed) {
                 $term = trim($qPed);
                 $q->where(function ($qq) use ($term) {
@@ -100,14 +89,11 @@ class AccessController extends Controller
             ->when($statusPed === 'inside', fn($q) => $q->whereHas('people', fn($qq) => $qq->whereNull('exit_at')))
             ->when($statusPed === 'closed', fn($q) => $q->whereNotNull('exit_at'))
             ->when($statusPed === 'pending', fn($q) => $q->whereNull('exit_at')->whereDoesntHave('people', fn($qq) => $qq->whereNull('exit_at')))
-            ->when($fromPed || $toPed, fn($q) => $q->where(function ($qq) use ($applyDateRange, $fromPed, $toPed) {
-                $applyDateRange($qq, $fromPed, $toPed);
-            }))
+            ->when($fromPed || $toPed, fn($q) => $q->where(fn($qq) => $applyDateRange($qq, $fromPed, $toPed)))
             ->latest('entry_at')
             ->paginate(10, ['*'], 'ped_page');
 
-        // Pasar sucursales (para selects en la vista); evita hacer consultas en Blade
-        $branches = \App\Models\Branch::orderBy('name')->get();
+        $branches = Branch::orderBy('name')->get();
 
         return view('accesos.index', compact(
             'vehicles', 'pedestrians', 'branches',
@@ -117,53 +103,58 @@ class AccessController extends Controller
         ));
     }
 
-    // Activos: accesos con al menos 1 persona dentro
-    public function active()
+    // Alias para que coincida con tu ruta: access.active -> AccessController@active
+    public function active(Request $request)
     {
-        $user     = auth()->user();
-        $isAdmin  = $user->hasRole('admin');
-        $branchId = request('branch_id');
+        // reutiliza la lógica existente
+        return $this->activos($request);
+    }
 
-        $accesses = \App\Models\Access::query()
+// Alias para que coincida con tu ruta: access.exit.form -> AccessController@exitForm
+    public function exitForm(Request $request)
+    {
+        // reutiliza la lógica existente
+        return $this->exitIndex($request);
+    }
+
+    /** GET: /accesos/activos (solo accesos abiertos) */
+    public function activos(Request $request)
+    {
+        $user     = $request->user();
+        $isAdmin  = $user && method_exists($user, 'hasRole') ? $user->hasRole('admin') : false;
+        $branchId = $request->input('branch_id');
+
+        $accesses = Access::query()
             ->with(['user', 'branch'])
-            ->with(['people' => function ($q) {
-                $q->whereNull('exit_at');
-            }])
-            ->whereHas('people', function ($q) {
-                $q->whereNull('exit_at');
-            })
-            ->when(! $isAdmin, fn($q) => $q->where('branch_id', $user->branch_id))
+            ->with(['people' => fn($q) => $q->whereNull('exit_at')])
+            ->whereHas('people', fn($q) => $q->whereNull('exit_at'))
+            ->when(! $isAdmin && $user, fn($q) => $q->where('branch_id', $user->branch_id))
             ->when($isAdmin && $branchId, fn($q) => $q->where('branch_id', $branchId))
             ->latest('entry_at')
             ->paginate(20);
 
-        $branches = \App\Models\Branch::orderBy('name')->get();
+        $branches = Branch::orderBy('name')->get();
 
         return view('accesos.activos', compact('accesses', 'branches', 'isAdmin', 'branchId'));
     }
 
-    /*
-     |------------------------------------------------------------------
-     |  ENTRADAS
-     |------------------------------------------------------------------
-     */
-
-    public function create()
+    /** GET: /accesos/create (form crear) */
+    public function create(Request $request)
     {
-        $user    = auth()->user();
-        $isAdmin = $user->hasRole('admin');
+        $user    = $request->user();
+        $isAdmin = $user && method_exists($user, 'hasRole') ? $user->hasRole('admin') : false;
 
-        // Sucursales solo si es admin (para seleccionar)
-        $branches = $isAdmin ? \App\Models\Branch::orderBy('name')->get() : collect();
+        $branches = $isAdmin ? Branch::orderBy('name')->get() : collect();
 
         return view('accesos.create', compact('isAdmin', 'branches'));
     }
 
-    public function show(\App\Models\Access $access)
+    /** GET: /accesos/{access} (detalle) */
+    public function show(Access $access)
     {
         $access->load([
             'user',
-            'branch', // 👈 para mostrar sucursal en la vista
+            'branch',
             'people' => function ($q) {
                 $q->orderByRaw('is_driver DESC')->orderBy('full_name');
             },
@@ -179,228 +170,141 @@ class AccessController extends Controller
         return view('accesos.show', compact('access', 'insideCount', 'driverEntry', 'driverExit'));
     }
 
-    public function store(Request $request)
-    {
-        $user    = auth()->user();
-        $isAdmin = $user->hasRole('admin');
+    /* ==========================
+     * ESCRITURA (crear/editar/salidas)
+     * ========================== */
 
-        // Normaliza placa a MAYÚSCULAS si viene
-        if ($request->filled('plate')) {
-            $plate = strtoupper(preg_replace('/\s+/', '', (string) $request->plate));
-            $request->merge(['plate' => $plate]);
-        }
+    /** POST: /accesses (crear acceso) */
+public function store(\Illuminate\Http\Request $request)
+{
+    // 1) Validación (aceptamos también campos top-level de tu form)
+    $data = $request->validate([
+        'type'           => ['required','in:vehicle,pedestrian'],
+        'plate'          => ['required_if:type,vehicle','nullable','string','max:20'],
+        'marca_vehiculo' => ['nullable','string','max:50'],
+        'color_vehiculo' => ['nullable','string','max:30'],
+        'tipo_vehiculo'  => ['nullable','string','max:30'],
+        'entry_note'     => ['nullable','string','max:255'],
 
-        // Validaciones base SOLO con columnas/inputs que impactan tablas reales
-        $rules = [
-            'type'                   => ['required', Rule::in(['vehicle', 'pedestrian'])],
+        // top-level (tu form los manda así)
+        'full_name'      => ['nullable','string','max:120'],
+        'document'       => ['nullable','string','max:50'],
+        'gender'         => ['nullable','string','max:20'],
 
-            // persona principal (chofer o peatón)
-            'full_name'              => ['required', 'string', 'max:120'],
-            'document'               => ['required', 'string', 'max:50'],
+        // ocupantes (opcional)
+        'people'                 => ['array'],
+        'people.*.full_name'     => ['required','string','max:120'],
+        'people.*.document'      => ['required','string','max:50'],
+        'people.*.gender'        => ['nullable','string','max:20'],
+        'people.*.role'          => ['required','in:driver,passenger,pedestrian'],
+        'people.*.is_driver'     => ['boolean'],
+        // branch (solo si el admin selecciona)
+        'branch_id'      => ['nullable','integer'],
+    ]);
 
-            // gender (se guarda en tabla people.gender)
-            'gender'                 => ['nullable', 'string', 'max:20'],
-
-            // notas (accesses.entry_note)
-            'entry_note'             => ['nullable', 'string', 'max:2000'],
-
-            // vehículo (opcionales) - columnas reales en accesses
-            'plate'                  => ['nullable', 'regex:/^[A-Z0-9-]{3,10}$/'],
-            'marca_vehiculo'         => ['nullable', 'string', 'max:60'],
-            'color_vehiculo'         => ['nullable', 'string', 'max:40'],
-            'tipo_vehiculo'          => ['nullable', Rule::in(['auto', 'moto', 'bicicleta', 'camion'])],
-
-            // acompañantes (access_people & people)
-            'passengers'             => ['nullable', 'array'],
-            'passengers.*.full_name' => ['nullable', 'string', 'max:120'],
-            'passengers.*.document'  => ['nullable', 'string', 'max:50'],
-            'passengers.*.gender'    => ['nullable', 'string', 'max:20'],
+    // 2) Armar la lista de ocupantes a partir de:
+    //    - people[] si vino
+    //    - o de los campos top-level (full_name/document) si vinieron sin people[]
+    $people = $data['people'] ?? [];
+    if (empty($people) && !empty($data['full_name']) && !empty($data['document'])) {
+        $people[] = [
+            'full_name' => $data['full_name'],
+            'document'  => $data['document'],
+            'gender'    => $data['gender'] ?? null,
+            'role'      => $data['type'] === 'vehicle' ? 'driver' : 'pedestrian',
+            'is_driver' => $data['type'] === 'vehicle',
         ];
-
-        // 👇 Exigir sucursal a administradores
-        if ($isAdmin) {
-            $rules['branch_id'] = ['required', 'exists:branches,id'];
-        }
-
-        if ($request->type === 'vehicle') {
-            $rules['plate'] = array_merge(['required'], $rules['plate']);
-        }
-
-        $data = $request->validate($rules, [
-            'plate.required' => 'La placa es obligatoria para vehículos.',
-            'plate.regex'    => 'Formato de placa inválido. Ejemplo: ABC-123.',
-        ]);
-
-        /*
-    |--------------------------------------------------------------
-    |  A) Evitar documentos duplicados dentro del mismo formulario
-    |--------------------------------------------------------------
-    */
-        $docs    = [];
-        $pushDoc = function ($doc, $label) use (&$docs) {
-            $doc = trim((string) $doc);
-            if ($doc === '') {
-                return;
-            }
-
-            if (in_array($doc, $docs, true)) {
-                throw ValidationException::withMessages([
-                    'document' => "El documento '{$doc}' está repetido dentro del acceso ({$label}).",
-                ]);
-            }
-            $docs[] = $doc;
-        };
-        $pushDoc($data['document'], 'principal');
-        foreach ($request->input('passengers', []) as $p) {
-            if (! empty($p['document'])) {
-                $pushDoc($p['document'], 'acompañantes');
-            }
-
-        }
-
-        /*
-    |--------------------------------------------------------------
-    |  B) Verificar que NADIE esté ya dentro por documento
-    |--------------------------------------------------------------
-    */
-        $docsToCheck = collect([$data['document']])
-            ->merge(collect($request->input('passengers', []))->pluck('document')->filter()->values());
-
-        if ($docsToCheck->isNotEmpty()) {
-            $alreadyInsideDocs = AccessPerson::whereNull('exit_at')
-                ->whereIn('document', $docsToCheck)
-                ->pluck('document')->unique()->all();
-
-            if (! empty($alreadyInsideDocs)) {
-                $list = implode(', ', $alreadyInsideDocs);
-                throw ValidationException::withMessages([
-                    'document' => "Los siguientes documentos (personas) ya se encuentran dentro: {$list}.",
-                ]);
-            }
-        }
-
-        /*
-    |--------------------------------------------------------------
-    |  C) Verificar que el vehículo (placa) no esté ya dentro
-    |--------------------------------------------------------------
-    */
-        if ($data['type'] === 'vehicle') {
-            $plateActive = Access::where('type', 'vehicle')
-                ->where('plate', $data['plate'])
-                ->whereNull('vehicle_exit_at')
-                ->exists();
-
-            if ($plateActive) {
-                throw ValidationException::withMessages([
-                    'plate' => 'Ese vehículo (placa) ya se encuentra dentro. Registre la salida antes de una nueva entrada.',
-                ]);
-            }
-        }
-
-        /*
-    |--------------------------------------------------------------
-    |  D) Crear Access + personas (y upsert al maestro people)
-    |--------------------------------------------------------------
-    */
-
-        // 👇 Para no-admin, forzar sucursal del usuario
-        if (! $isAdmin) {
-            $request->merge(['branch_id' => $user->branch_id]);
-        }
-
-        DB::transaction(function () use ($request, $data) {
-            $access = Access::create([
-                'branch_id'      => $request->branch_id,
-                'type'           => $data['type'],
-                'plate'          => $data['type'] === 'vehicle' ? $data['plate'] : null,
-                'marca_vehiculo' => $data['type'] === 'vehicle' ? $request->input('marca_vehiculo') : null,
-                'color_vehiculo' => $data['type'] === 'vehicle' ? $request->input('color_vehiculo') : null,
-                'tipo_vehiculo'  => $data['type'] === 'vehicle' ? $request->input('tipo_vehiculo') : null,
-                'entry_at'       => now('America/Asuncion'),
-                'entry_note'     => $request->input('entry_note'),
-                'user_id'        => auth()->id(),
-                'full_name'      => $data['full_name'],
-                'document'       => $data['document'],
-            ]);
-
-            // Upsert persona principal (maestro)
-            Person::updateOrCreate(
-                ['document' => $data['document']],
-                ['full_name' => $data['full_name'], 'gender' => $request->input('gender')]
-            );
-
-            if ($data['type'] === 'vehicle') {
-                // Chofer
-                $access->people()->create([
-                    'full_name' => $data['full_name'],
-                    'document'  => $data['document'],
-                    'role'      => 'driver',
-                    'is_driver' => true,
-                    'gender'    => $request->input('gender'),
-                    'entry_at'  => now('America/Asuncion'),
-                ]);
-
-                // Acompañantes opcionales
-                foreach ($request->input('passengers', []) as $p) {
-                    $p = array_map('trim', (array) $p);
-                    if (! empty($p['full_name']) && ! empty($p['document'])) {
-                        $pGender = $p['gender'] ?? null;
-
-                        Person::updateOrCreate(
-                            ['document' => $p['document']],
-                            ['full_name' => $p['full_name'], 'gender' => $pGender]
-                        );
-
-                        $access->people()->create([
-                            'full_name' => $p['full_name'],
-                            'document'  => $p['document'],
-                            'role'      => 'passenger',
-                            'is_driver' => false,
-                            'gender'    => $pGender,
-                            'entry_at'  => now('America/Asuncion'),
-                        ]);
-                    }
-                }
-            } else {
-                // Peatón
-                $access->people()->create([
-                    'full_name' => $data['full_name'],
-                    'document'  => $data['document'],
-                    'role'      => 'pedestrian',
-                    'is_driver' => false,
-                    'gender'    => $request->input('gender'),
-                    'entry_at'  => now('America/Asuncion'),
-                ]);
-            }
-        });
-
-        Log::info('access.created', [
-            'access_id' => $access->id ?? null,
-            'type'      => $data['type'],
-            'plate'     => $data['type'] === 'vehicle' ? ($data['plate'] ?? null) : null,
-            'user_id'   => auth()->id(),
-            'entry_at'  => now('America/Asuncion')->toDateTimeString(),
-            'people'    => [
-                'main_document' => $data['document'],
-                'passengers'    => collect($request->input('passengers', []))
-                    ->filter(fn($p) => ! empty($p['document']))
-                    ->pluck('document')->values()->all(),
-            ],
-        ]);
-
-        return redirect()->route('access.index')->with('success', 'Entrada registrada correctamente.');
     }
 
-    /*
-     |------------------------------------------------------------------
-     |  SALIDAS
-     |------------------------------------------------------------------
-     */
+    // 3) Anti-duplicados (placa/doc activos)
+    $docs = collect($people)->pluck('document')->filter()->all();
+    $this->guardAgainstDuplicates($data['type'], $data['plate'] ?? null, $docs);
 
-    public function exitForm()
+    // 4) Determinar branch (admin puede elegir; otros, su propia sucursal)
+    $user    = $request->user();
+    $isAdmin = $user && method_exists($user, 'hasRole') ? $user->hasRole('admin') : false;
+    $branchId = $user?->branch_id;
+    if ($isAdmin && $request->filled('branch_id')) {
+        $branchId = (int) $request->input('branch_id');
+    }
+
+    // 5) Tomar el "primario" para cumplir NOT NULL de accesses.full_name/document
+    $primary = !empty($people) ? $people[0] : ['full_name' => 'N/D', 'document' => 'N/D'];
+
+    // 6) Escritura atómica: insert con full_name/document/people_count y luego ocupantes
+    $access = null;
+    \Illuminate\Support\Facades\DB::transaction(function () use (&$access, $data, $people, $primary, $branchId) {
+        $access = \App\Models\Access::create([
+            'type'           => $data['type'],
+            'plate'          => $data['plate'] ?? null,
+            'marca_vehiculo' => $data['marca_vehiculo'] ?? null,
+            'color_vehiculo' => $data['color_vehiculo'] ?? null,
+            'tipo_vehiculo'  => $data['tipo_vehiculo'] ?? null,
+            'entry_at'       => now(),
+            'entry_note'     => $data['entry_note'] ?? null,
+            'user_id'        => auth()->id(),
+            'branch_id'      => $branchId,
+
+            // >>> campos NOT NULL en tu tabla
+            'full_name'      => $primary['full_name'] ?? 'N/D',
+            'document'       => $primary['document'] ?? 'N/D',
+            'people_count'   => (string) count($people),
+        ]);
+
+        // Cargar ocupantes (si hay)
+        if (!empty($people)) {
+            $this->upsertPeople($access, $people);
+        }
+
+        // Ajustar denormalizados por si cambiaron (count, etc.)
+        $this->denormalizeAccess($access);
+    });
+
+    // 7) Respuesta
+    return redirect()
+        ->route('access.show', $access)   // tu nombre de ruta
+        ->with('ok', 'Acceso registrado.');
+}
+
+
+    /** POST: /accesses/{access}/people (agregar ocupante) */
+    public function storePerson(Request $request, Access $access)
     {
-        // Listado de accesos con gente dentro (paginado y con sucursal)
-        $activeAccesses = \App\Models\Access::query()
+        $data = $request->validate([
+            'full_name' => ['required', 'string', 'max:120'],
+            'document'  => ['required', 'string', 'max:50'],
+            'gender'    => ['nullable', 'in:M,F,O'],
+            'role'      => ['required', 'in:driver,passenger,pedestrian'],
+            'is_driver' => ['boolean'],
+        ]);
+
+        $this->guardAgainstDuplicates('pedestrian', null, [$data['document']]);
+
+        DB::transaction(function () use ($access, $data) {
+            $access->people()->create([
+                'full_name' => $data['full_name'],
+                'document'  => $data['document'],
+                'gender'    => $data['gender'] ?? null,
+                'role'      => $data['role'],
+                'is_driver' => (bool) ($data['is_driver'] ?? false),
+                'entry_at'  => now(),
+            ]);
+
+            Person::updateOrCreate(
+                ['document' => $data['document']],
+                ['full_name' => $data['full_name'], 'gender' => $data['gender'] ?? null]
+            );
+
+            $this->denormalizeAccess($access);
+        });
+
+        return back()->with('ok', 'Ocupante agregado.');
+    }
+
+    /** GET: /accesos/exit (vista para cerrar accesos) */
+    public function exitIndex(Request $request)
+    {
+        $activeAccesses = Access::query()
             ->with([
                 'branch',
                 'people' => fn($q) => $q->whereNull('exit_at'),
@@ -412,7 +316,7 @@ class AccessController extends Controller
         return view('accesos.exit', compact('activeAccesses'));
     }
 
-    // Buscar por placa o documento (activos)
+    /** POST: /accesos/exit/search (buscar por placa o documento para cerrar) */
     public function search(Request $request)
     {
         $request->validate([
@@ -423,10 +327,9 @@ class AccessController extends Controller
         $access = null;
         $person = null;
 
-        // Búsqueda por placa (vehículo activo)
         if ($request->filled('plate')) {
             $plate  = strtoupper(trim($request->plate));
-            $access = \App\Models\Access::where('type', 'vehicle')
+            $access = Access::where('type', 'vehicle')
                 ->where('plate', $plate)
                 ->whereHas('people', fn($q) => $q->whereNull('exit_at'))
                 ->with([
@@ -436,10 +339,9 @@ class AccessController extends Controller
                 ->first();
         }
 
-        // Búsqueda por documento (persona activa)
         if (! $access && $request->filled('document')) {
             $doc    = trim($request->document);
-            $person = \App\Models\AccessPerson::whereNull('exit_at')
+            $person = AccessPerson::whereNull('exit_at')
                 ->where('document', $doc)
                 ->with('access')
                 ->first();
@@ -454,10 +356,9 @@ class AccessController extends Controller
             }
         }
 
-        // También traemos el listado de activos para mostrar si no hay resultado
         $activeAccesses = null;
         if (! $access) {
-            $activeAccesses = \App\Models\Access::query()
+            $activeAccesses = Access::query()
                 ->with([
                     'branch',
                     'people' => fn($q) => $q->whereNull('exit_at'),
@@ -471,76 +372,102 @@ class AccessController extends Controller
             ->with('success', $access ? null : 'No se encontraron resultados activos.');
     }
 
-    // Registrar salida (vehículo/personas)
+    /** POST: /accesses/{access}/exit (cerrar acceso completo) */
     public function registerExit(Request $request, Access $access)
     {
-        $data = $request->validate([
-            'vehicle_exit'           => ['nullable', 'boolean'],
-            'vehicle_exit_driver_id' => [
-                'nullable',
-                'integer',
-                Rule::exists('access_people', 'id')->where(fn($q) => $q->where('access_id', $access->id)),
-            ],
-            'people_exit'            => ['nullable', 'array'],
-            'people_exit.*'          => ['integer', 'exists:access_people,id'],
-            'exit_note'              => ['nullable', 'string', 'max:2000'],
+        $request->validate([
+            'driver_person_id' => ['nullable', 'integer', 'exists:access_people,id'],
+            'exit_note'        => ['nullable', 'string', 'max:255'],
         ]);
 
-        $now = now('America/Asuncion');
-        $ids = collect($request->input('people_exit', []))->unique()->values();
+        abort_if($access->exit_at, 422, 'Este acceso ya está cerrado.');
 
-        DB::transaction(function () use ($request, $access, $ids, $now) {
-            // Si sale vehículo, registrar salida y conductor
-            if ($request->boolean('vehicle_exit') && $access->type === 'vehicle' && is_null($access->vehicle_exit_at)) {
-                $driverOutId                    = (int) $request->input('vehicle_exit_driver_id');
-                $access->vehicle_exit_at        = $now;
-                $access->vehicle_exit_driver_id = $driverOutId;
-                $access->save();
-                Log::info('access.vehicle_exit', [
-                    'access_id' => $access->id,
-                    'driver_id' => (int) $request->input('vehicle_exit_driver_id'),
-                    'at'        => $now->toDateTimeString(),
-                    'user_id'   => auth()->id(),
-                ]);
+        DB::transaction(function () use ($request, $access) {
+            $driverId = $request->input('driver_person_id');
+
+            if ($driverId) {
+                $access->vehicle_exit_driver_id = $driverId;
+                $access->vehicle_exit_at        = now();
             }
 
-            // Salida de personas seleccionadas
-            if ($ids->isNotEmpty()) {
-                AccessPerson::where('access_id', $access->id)
-                    ->whereIn('id', $ids)
-                    ->whereNull('exit_at')
-                    ->update(['exit_at' => $now]);
-                Log::info('access.people_exit', [
-                    'access_id'  => $access->id,
-                    'people_ids' => $ids->all(),
-                    'at'         => $now->toDateTimeString(),
-                    'user_id'    => auth()->id(),
-                ]);
-            }
+            $access->exit_at   = now();
+            $access->exit_note = $request->input('exit_note');
+            $access->save();
 
-            // Cerrar access si ya no queda nadie dentro; guardar nota
-            $stillInside = AccessPerson::where('access_id', $access->id)
-                ->whereNull('exit_at')
-                ->count();
-
-            Log::info('access.closed_check', [
-                'access_id'   => $access->id,
-                'stillInside' => $stillInside,
-                'exit_at'     => optional($access->exit_at)->toDateTimeString(),
-            ]);
-
-            if ($stillInside === 0) {
-                $access->exit_at = $now;
-                if ($request->filled('exit_note')) {
-                    $access->exit_note = $request->input('exit_note');
-                }
-                $access->save();
-            } elseif ($request->filled('exit_note')) {
-                $access->exit_note = $request->input('exit_note');
-                $access->save();
-            }
+            $access->people()->whereNull('exit_at')->update(['exit_at' => now()]);
         });
 
-        return back()->with('success', 'Salida registrada correctamente.');
+        return back()->with('ok', 'Salida registrada.');
+    }
+
+    /** POST: /access-people/{person}/exit (cerrar salida individual) */
+    public function registerExitPerson(AccessPerson $person)
+    {
+        abort_if($person->exit_at, 422, 'Ya tiene salida registrada.');
+        $person->exit_at = now();
+        $person->save();
+
+        return back()->with('ok', 'Salida del ocupante registrada.');
+    }
+
+    /* ==========================
+     * HELPERS PRIVADOS
+     * ========================== */
+
+    /** Verifica duplicados activos (misma placa o documentos “dentro”) con bloqueo. */
+    private function guardAgainstDuplicates(string $type, ?string $plate, array $docs = []): void
+    {
+        DB::transaction(function () use ($type, $plate, $docs) {
+            if ($type === 'vehicle' && ! empty($plate)) {
+                $exists = DB::table('accesses')
+                    ->where('plate', $plate)
+                    ->whereNull('exit_at')
+                    ->lockForUpdate()
+                    ->exists();
+                abort_if($exists, 422, 'Esa placa ya está “dentro”.');
+            }
+
+            $docs = array_values(array_filter(array_unique($docs)));
+            if (! empty($docs)) {
+                $docExists = DB::table('access_people')
+                    ->whereNull('exit_at')
+                    ->whereIn('document', $docs)
+                    ->lockForUpdate()
+                    ->exists();
+                abort_if($docExists, 422, 'Alguna persona ya está “dentro”.');
+            }
+        }, 1); // transacción corta para lock
+    }
+
+    /** Crea/actualiza maestro y agrega ocupantes al access. */
+    private function upsertPeople(Access $access, array $people = []): void
+    {
+        foreach ($people as $p) {
+            $access->people()->create([
+                'full_name' => $p['full_name'],
+                'document'  => $p['document'],
+                'gender'    => $p['gender'] ?? null,
+                'role'      => $p['role'],
+                'is_driver' => (bool) ($p['is_driver'] ?? false),
+                'entry_at'  => now(),
+            ]);
+
+            Person::updateOrCreate(
+                ['document' => $p['document']],
+                ['full_name' => $p['full_name'], 'gender' => $p['gender'] ?? null]
+            );
+        }
+    }
+
+    /** Actualiza campos denormalizados en Access (people_count, full_name, document). */
+    private function denormalizeAccess(Access $access): void
+    {
+        $access->people_count = $access->people()->count();
+        if ($access->people_count > 0) {
+            $first             = $access->people()->oldest('id')->first();
+            $access->full_name = $first->full_name;
+            $access->document  = $first->document;
+        }
+        $access->save();
     }
 }
