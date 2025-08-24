@@ -13,6 +13,20 @@ class ScanController extends Controller
      * Pantalla del escáner / registro de checkpoint.
      * Recibe ?c=qr_token (UUID) desde el QR físico.
      */
+
+    private function patrolPolicy(): array
+    {
+        return [
+            'accuracyMax'          => (int) config('patrol.accuracy_max', 50),
+            'modoEstrictoAccuracy' => (bool) config('patrol.strict_accuracy', false),
+            'modoEstrictoradio'    => (bool) config('patrol.strict_radius', false),
+            // Quedan disponibles si el flujo ya los usa:
+            'speedMaxMps'          => (float) config('patrol.speed_max_mps', 15),
+            'jumpMaxM'             => (float) config('patrol.jump_max_m', 150),
+            'jumpWindowS'          => (int) config('patrol.jump_window_s', 10),
+        ];
+    }
+
     public function showScanner(Request $request)
     {
         $qr = $request->query('c');
@@ -68,11 +82,14 @@ class ScanController extends Controller
             'device_info'          => ['nullable', 'string', 'max:255'],
         ]);
 
-                                       // ======= Parámetros de política (ajusta a gusto) =======
-        $modoEstrictoradio    = false; // true => no guarda si estás fuera de radio
-        $modoEstrictoAccuracy = false; // true => no guarda si accuracy > $accuracyMax
-        $accuracyMax          = 50;    // metros; por encima de esto es "baja precisión"
-                                       // =======================================================
+        [
+            'accuracyMax'          => $accuracyMax,
+            'modoEstrictoAccuracy' => $modoEstrictoAccuracy,
+            'modoEstrictoradio'    => $modoEstrictoradio,
+            'speedMaxMps'          => $speedMaxMps,
+            'jumpMaxM'             => $jumpMaxM,
+            'jumpWindowS'          => $jumpWindowS,
+        ] = $this->patrolPolicy();
 
         // 1) Entidades
         $assignment = \App\Models\PatrolAssignment::findOrFail($data['patrol_assignment_id']);
