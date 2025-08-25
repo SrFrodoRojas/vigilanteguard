@@ -7,10 +7,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Checkpoint;
 use App\Models\CheckpointScan;
 use App\Models\PatrolAssignment;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Database\QueryException;
 use Illuminate\Support\Str;
 
 class ScanController extends Controller
@@ -48,7 +48,7 @@ class ScanController extends Controller
     public function store(Request $request)
     {
         // Normalizar accuracy si vino como accuracy_m (desde la vista)
-        if ($request->has('accuracy_m') && !$request->has('accuracy')) {
+        if ($request->has('accuracy_m') && ! $request->has('accuracy')) {
             $request->merge(['accuracy' => $request->input('accuracy_m')]);
         }
 
@@ -68,7 +68,7 @@ class ScanController extends Controller
             ->where('qr_token', $data['qr_token'])
             ->first();
 
-        if (!$checkpoint) {
+        if (! $checkpoint) {
             return back()->with('warning', 'QR inválido o no corresponde a un checkpoint activo.');
         }
         if ((int) $checkpoint->patrol_route_id !== (int) $assignment->patrol_route_id) {
@@ -103,7 +103,7 @@ class ScanController extends Controller
         );
 
         // 5) Política verificado / no verificado
-        $verified = 1;
+        $verified   = 1;
         $accToCheck = is_null($acc) ? 9999 : $acc;
 
         if ($accToCheck > $accuracyMax) {
@@ -121,10 +121,10 @@ class ScanController extends Controller
         }
 
         // 6) Anti-fraude (velocidad/salto) basados en último scan por asignación
-        $suspect = 0;
-        $suspectReason = null;
+        $suspect          = 0;
+        $suspectReason    = null;
         $speedMpsForStore = null;
-        $jumpMForStore = null;
+        $jumpMForStore    = null;
 
         $lastScan = CheckpointScan::where('patrol_assignment_id', $assignment->id)
             ->orderByDesc('scanned_at')
@@ -139,7 +139,7 @@ class ScanController extends Controller
                 $lng
             ); // m
 
-            $speed = $dd / $dt; // m/s
+            $speed            = $dd / $dt; // m/s
             $speedMpsForStore = (int) round($speed);
             $jumpMForStore    = (int) round($dd);
 
@@ -150,8 +150,8 @@ class ScanController extends Controller
             if ($dt < $jumpWindowS && $dd > $jumpMaxM) {
                 $reasons[] = "jump>{$jumpMaxM}m<{$jumpWindowS}s";
             }
-            if (!empty($reasons)) {
-                $suspect = 1;
+            if (! empty($reasons)) {
+                $suspect       = 1;
                 $suspectReason = implode('|', $reasons);
                 // Si querés que todo sospechoso quede no verificado, descomentá:
                 // $verified = 0;
@@ -210,8 +210,8 @@ class ScanController extends Controller
         }
 
         return $verified
-            ? back()->with('success', 'Punto verificado correctamente ✅')
-            : back()->with('warning', 'Punto registrado, pero NO VERIFICADO (radio o precisión).');
+        ? back()->with('success', 'Punto verificado correctamente ✅')
+        : back()->with('warning', 'Punto registrado, pero NO VERIFICADO (radio o precisión).');
     }
 
     /**
@@ -234,41 +234,53 @@ class ScanController extends Controller
      */
     private function haversineMeters(float $lat1, float $lon1, float $lat2, float $lon2): float
     {
-        $R = 6371000; // m
+        $R     = 6371000; // m
         $toRad = fn($deg) => $deg * M_PI / 180;
-        $dLat = $toRad($lat2 - $lat1);
-        $dLon = $toRad($lon2 - $lon1);
-        $a = sin($dLat/2) * sin($dLat/2)
-           + cos($toRad($lat1)) * cos($toRad($lat2))
-           * sin($dLon/2) * sin($dLon/2);
+        $dLat  = $toRad($lat2 - $lat1);
+        $dLon  = $toRad($lon2 - $lon1);
+        $a     = sin($dLat / 2) * sin($dLat / 2)
+         + cos($toRad($lat1)) * cos($toRad($lat2))
+         * sin($dLon / 2) * sin($dLon / 2);
         $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
         return $R * $c;
     }
 
     public function showScanner(Request $request)
-{
-    $checkpoint = null;
+    {
+        $checkpoint = null;
 
-    // Si abriste la pantalla desde un QR con ?c=<qr_token>
-    if ($request->filled('c')) {
-        $checkpoint = Checkpoint::with(['route.branch'])
-            ->where('qr_token', $request->input('c'))
-            ->first();
+        // Si abriste desde un QR con ?c=<qr_token>
+        if ($request->filled('c')) {
+            $checkpoint = Checkpoint::with(['route.branch'])
+                ->where('qr_token', $request->input('c'))
+                ->first();
+        }
+
+        // Asignaciones del guardia autenticado
+        $myAssignments = PatrolAssignment::with(['route.branch'])
+            ->where('guard_id', Auth::id())
+            ->orderByDesc('scheduled_start')
+            ->limit(20)
+            ->get();
+
+        // Preselección por ?a=<assignment_id> o por ruta del checkpoint
+        $assignment = null;
+        if ($request->filled('a')) {
+            $assignment = $myAssignments->firstWhere('id', (int) $request->input('a'));
+        }
+        if (! $assignment && $checkpoint) {
+            $assignment = $myAssignments->firstWhere('patrol_route_id', $checkpoint->patrol_route_id);
+        }
+
+        // ¿Ya fue registrado este checkpoint en esta asignación?
+        $alreadyScanned = false;
+        if ($checkpoint && $assignment) {
+            $alreadyScanned = CheckpointScan::where('patrol_assignment_id', $assignment->id)
+                ->where('checkpoint_id', $checkpoint->id)
+                ->exists();
+        }
+
+        return view('patrol.scan', compact('checkpoint', 'assignment', 'myAssignments', 'alreadyScanned'));
     }
 
-    // Asignaciones del guardia autenticado (ajustá el scope si usás otro)
-    $myAssignments = PatrolAssignment::with(['route.branch'])
-        ->where('guard_id', Auth::id())
-        ->orderByDesc('scheduled_start')
-        ->limit(20)
-        ->get();
-
-    // Si hay checkpoint, preseleccionamos la asignación de la misma ruta
-    $assignment = null;
-    if ($checkpoint) {
-        $assignment = $myAssignments->firstWhere('patrol_route_id', $checkpoint->patrol_route_id);
-    }
-
-    return view('patrol.scan', compact('checkpoint', 'assignment', 'myAssignments'));
-}
 }

@@ -7,6 +7,7 @@
         .hint {
             font-size: .95rem;
         }
+
         .gps-pill {
             font-size: .9rem;
         }
@@ -38,7 +39,8 @@
     {{-- Instrucciones + acciones --}}
     <x-adminlte-card theme="light" title="¿Cómo registrar este punto?" icon="fas fa-info-circle">
         <ol class="mb-2">
-            <li>Escaneá el código QR físico del punto <span class="text-muted">(o abrí esta pantalla desde ese QR)</span>.</li>
+            <li>Escaneá el código QR físico del punto <span class="text-muted">(o abrí esta pantalla desde ese QR)</span>.
+            </li>
             <li>Tocá <b>Tomar ubicación</b> para capturar tu GPS.</li>
             <li>Presioná <b>Registrar paso por el punto</b>.</li>
         </ol>
@@ -59,6 +61,12 @@
                 <i class="fas fa-crosshairs"></i> Mejorar precisión
             </button>
         </div>
+
+        {{-- Previsualización/ayuda QR --}}
+        <video id="qrVideo" class="d-none mt-2" playsinline muted autoplay
+            style="max-width:100%;border-radius:.5rem;"></video>
+        <canvas id="qrCanvas" class="d-none"></canvas>
+        <div id="qrHint" class="small text-muted d-none">Apuntá al QR. Se completará automáticamente.</div>
 
         {{-- Muestra estado de GPS --}}
         <div class="mt-3">
@@ -99,7 +107,8 @@
         <x-adminlte-card theme="primary" icon="fas fa-map-marker-alt" title="Punto: {{ $checkpoint->name }}">
             <dl class="row mb-0">
                 <dt class="col-sm-4">Ruta</dt>
-                <dd class="col-sm-8">{{ optional($checkpoint->route)->name }} ({{ optional(optional($checkpoint->route)->branch)->name ?? '—' }})</dd>
+                <dd class="col-sm-8">{{ optional($checkpoint->route)->name }}
+                    ({{ optional(optional($checkpoint->route)->branch)->name ?? '—' }})</dd>
 
                 <dt class="col-sm-4">Radio permitido</dt>
                 <dd class="col-sm-8">{{ $checkpoint->radius_m }} m</dd>
@@ -119,7 +128,15 @@
 
     {{-- FORM: siempre visible --}}
     <x-adminlte-card>
-        <form method="POST" action="{{ route('patrol.scan.store') }}">
+        @php $alreadyScanned = $alreadyScanned ?? false; @endphp
+
+        @if ($alreadyScanned)
+            <x-adminlte-alert theme="success" title="Punto ya registrado">
+                Este checkpoint ya fue registrado para esta asignación.
+            </x-adminlte-alert>
+        @endif
+
+        <form method="POST" action="{{ route('patrol.scan.store') }}" id="scan-form">
             @csrf
             <input type="hidden" name="qr_token" id="qr_token" value="{{ $checkpoint->qr_token ?? '' }}">
             <input type="hidden" name="assignment_id" id="assignment_id" value="{{ $assignment->id ?? '' }}">
@@ -127,12 +144,17 @@
             <input type="hidden" name="lng" id="lng">
             <input type="hidden" name="accuracy_m" id="accuracy_m">
 
-            <button type="submit" class="btn btn-primary">
-                <i class="fas fa-check"></i> Registrar paso por el punto
+            <button type="submit" class="btn btn-primary" id="btnSubmit" @disabled($alreadyScanned)>
+                @if ($alreadyScanned)
+                    <i class="fas fa-check-double"></i> Ya registrado
+                @else
+                    <i class="fas fa-check"></i> Registrar paso por el punto
+                @endif
             </button>
             <a href="{{ route('patrol.index') }}" class="btn btn-outline-secondary">Volver</a>
         </form>
     </x-adminlte-card>
+
 
 @endsection
 
@@ -147,9 +169,15 @@
                 assignmentSelect.addEventListener('change', () => {
                     assignmentInput.value = assignmentSelect.value || '';
                 });
+                // Auto-select si solo hay 1 opción válida
+                const choices = Array.from(assignmentSelect?.options || []).filter(o => o.value);
+                if (choices.length === 1) {
+                    assignmentSelect.value = choices[0].value;
+                    assignmentInput.value = choices[0].value;
+                }
             }
 
-            // --- GPS ---
+            // ---------- GPS en tiempo real (watchPosition) ----------
             const gpsStatus = document.getElementById('gpsStatus');
             const gpsDetails = document.getElementById('gpsDetails');
             const latLbl = document.getElementById('latLbl');
@@ -163,13 +191,15 @@
             const btnGetLocation = document.getElementById('btnGetLocation');
             const btnImproveAcc = document.getElementById('btnImproveAcc');
 
+            let watchId = null;
+
             function updateGpsStatus(ok, lat, lng, acc) {
                 if (ok) {
                     gpsStatus.className = 'badge bg-success gps-pill';
                     gpsStatus.textContent = 'Ubicación lista (±' + (acc ?? '?') + ' m)';
                     gpsDetails.classList.remove('d-none');
-                    latLbl.textContent = lat?.toFixed(6) ?? '—';
-                    lngLbl.textContent = lng?.toFixed(6) ?? '—';
+                    latLbl.textContent = (lat ?? '—') && lat.toFixed ? lat.toFixed(6) : lat;
+                    lngLbl.textContent = (lng ?? '—') && lng.toFixed ? lng.toFixed(6) : lng;
                     accLbl.textContent = (acc ?? '—') + ' m';
                 } else {
                     gpsStatus.className = 'badge bg-secondary gps-pill';
@@ -178,116 +208,229 @@
                 }
             }
 
-            function getLocation(high = false) {
+            function startWatch(high = false) {
                 if (!navigator.geolocation) {
                     alert('Geolocalización no soportada');
                     return;
                 }
+                if (watchId !== null) {
+                    navigator.geolocation.clearWatch(watchId);
+                    watchId = null;
+                }
                 const opts = {
                     enableHighAccuracy: high,
-                    timeout: 15000,
+                    timeout: 20000,
                     maximumAge: 0
                 };
-                navigator.geolocation.getCurrentPosition(
+                watchId = navigator.geolocation.watchPosition(
                     pos => {
                         const {
                             latitude,
                             longitude,
                             accuracy
-                        } = pos.coords;
-                        latInput.value = latitude;
-                        lngInput.value = longitude;
-                        const fixedAccuracy = 20;
-                        accInput.value = fixedAccuracy;
-                        updateGpsStatus(true, latitude, longitude, fixedAccuracy);
-                        if ((fixedAccuracy ?? 9999) > 50) btnImproveAcc?.classList.remove('d-none');
+                        } = pos.coords || {};
+                        latInput.value = latitude ?? '';
+                        lngInput.value = longitude ?? '';
+                        const acc = Math.round(accuracy ?? 0);
+                        accInput.value = acc;
+
+                        updateGpsStatus(true, latitude, longitude, acc);
+
+                        // Mostrar "Mejorar precisión" si > 50 m
+                        if ((acc ?? 9999) > 50) {
+                            btnImproveAcc?.classList.remove('d-none');
+                        } else {
+                            btnImproveAcc?.classList.add('d-none');
+                        }
                     },
                     err => {
                         console.warn(err);
                         updateGpsStatus(false);
-                        alert('No se pudo obtener la ubicación. Verificá permisos de GPS y datos.');
+                        // sin alert intrusivo en watch
                     },
                     opts
                 );
             }
 
-            // Asignar el evento de clic al botón "Tomar ubicación"
             if (btnGetLocation) {
-                btnGetLocation.addEventListener('click', () => getLocation(false));
+                btnGetLocation.addEventListener('click', () => startWatch(false));
             }
-
-            // Asignar el evento de clic al botón "Mejorar precisión"
             if (btnImproveAcc) {
-                btnImproveAcc.addEventListener('click', () => getLocation(true));
+                btnImproveAcc.addEventListener('click', () => startWatch(true));
+            }
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden && watchId !== null) startWatch(false);
+            });
+
+            // (Opcional) iniciar al cargar para no olvidar el botón:
+            // startWatch(false);
+
+            // ---------- Cámara en vivo con jsQR ----------
+            const btnCam = document.getElementById('btnOpenCamera');
+            const video = document.getElementById('qrVideo');
+            const canvas = document.getElementById('qrCanvas');
+            const hint = document.getElementById('qrHint');
+            const qrInput = document.getElementById('qr_token');
+
+            let stream = null,
+                rafId = null;
+
+            function extractQrToken(raw) {
+                if (!raw) return null;
+                const str = String(raw).trim();
+                let token = null;
+                try {
+                    if (str.includes('?')) {
+                        const urlParams = new URLSearchParams(str.split('?')[1]);
+                        token = urlParams.get('c');
+                    }
+                } catch (_) {}
+                // UUID puro
+                const uuidRe = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+                if (!token && uuidRe.test(str)) token = str;
+                return token;
             }
 
-            // --- Hooks del lector de QR ---
-            const qrTokenInput = document.getElementById('qr_token');
-            const btnOpenCamera = document.getElementById('btnOpenCamera');
-            const fileFromGallery = document.getElementById('fileFromGallery');
+            async function startCamera() {
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({
+                        video: {
+                            facingMode: {
+                                ideal: 'environment'
+                            }
+                        },
+                        audio: false
+                    });
+                    video.srcObject = stream;
+                    await video.play();
+                    video.classList.remove('d-none');
+                    hint.classList.remove('d-none');
 
-            // Procesar imagen QR
-            function processQRImage(image) {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                canvas.width = image.width;
-                canvas.height = image.height;
-                ctx.drawImage(image, 0, 0, image.width, image.height);
-                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                const code = jsQR(imageData.data, canvas.width, canvas.height);
-                if (code) {
-                    const qrToken = code.data;
-                    const urlParams = new URLSearchParams(qrToken.split('?')[1]);
-                    const extractedToken = urlParams.get('c');
-                    const uuidPattern = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
-                    if (uuidPattern.test(extractedToken)) {
-                        document.getElementById('qr_token').value = extractedToken;
-                    } else {
-                        alert('El código QR no contiene un UUID válido.');
-                    }
-                } else {
-                    alert('No se pudo procesar el código QR.');
+                    const ctx = canvas.getContext('2d', {
+                        willReadFrequently: true
+                    });
+                    const tick = () => {
+                        if (!video.videoWidth || !video.videoHeight) {
+                            rafId = requestAnimationFrame(tick);
+                            return;
+                        }
+                        canvas.width = video.videoWidth;
+                        canvas.height = video.videoHeight;
+                        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        const res = jsQR(imageData.data, canvas.width, canvas.height, {
+                            inversionAttempts: 'dontInvert'
+                        });
+                        if (res && res.data) {
+                            const token = extractQrToken(res.data);
+                            if (token) {
+                                qrInput.value = token;
+                                hint.textContent = 'QR capturado ✓';
+                                hint.classList.add('text-success');
+                                stopCamera();
+                                return;
+                            }
+                        }
+                        rafId = requestAnimationFrame(tick);
+                    };
+                    rafId = requestAnimationFrame(tick);
+                } catch (e) {
+                    alert('No se pudo abrir la cámara: ' + (e.message || e));
                 }
             }
 
+            function stopCamera() {
+                if (rafId) cancelAnimationFrame(rafId), rafId = null;
+                if (stream) {
+                    stream.getTracks().forEach(t => t.stop());
+                    stream = null;
+                }
+                video.classList.add('d-none');
+                hint.classList.add('d-none');
+            }
+
+            btnCam?.addEventListener('click', () => {
+                if (!stream) startCamera();
+                else stopCamera();
+            });
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) stopCamera();
+            });
+
+            // ---------- Lector de imagen (galería) ----------
+            const fileFromGallery = document.getElementById('fileFromGallery');
             fileFromGallery?.addEventListener('change', function() {
                 if (!this.files?.length) return;
                 const reader = new FileReader();
                 reader.onload = function(event) {
                     const img = new Image();
                     img.onload = function() {
-                        processQRImage(img);
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        ctx.drawImage(img, 0, 0, img.width, img.height);
+                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        const code = jsQR(imageData.data, canvas.width, canvas.height);
+                        if (code && code.data) {
+                            const token = extractQrToken(code.data);
+                            if (token) {
+                                document.getElementById('qr_token').value = token;
+                                alert('QR cargado desde imagen ✓');
+                            } else {
+                                alert('El código QR no contiene un token válido.');
+                            }
+                        } else {
+                            alert('No se pudo procesar el código QR.');
+                        }
                     };
                     img.src = event.target.result;
                 };
                 reader.readAsDataURL(this.files[0]);
             });
+
+            // ---------- Guard de formulario (evita validation.required) ----------
+            const form = document.querySelector('form[action="{{ route('patrol.scan.store') }}"]');
+            form?.addEventListener('submit', (e) => {
+                const qr = document.getElementById('qr_token')?.value?.trim();
+                const asg = document.getElementById('assignment_id')?.value?.trim();
+                const lat = document.getElementById('lat')?.value?.trim();
+                const lng = document.getElementById('lng')?.value?.trim();
+                const missing = [];
+                if (!asg) missing.push('Seleccionar una asignación');
+                if (!qr) missing.push('Escanear el QR del punto');
+                if (!lat || !lng) missing.push('Tomar ubicación (GPS)');
+                if (missing.length) {
+                    e.preventDefault();
+                    alert('Faltan datos para registrar:\n- ' + missing.join('\n- '));
+                }
+                // Debug opcional:
+                // console.log('[SCAN SUBMIT]', {qr, asg, lat, lng, acc: document.getElementById('accuracy_m')?.value});
+            });
+        })();
+
+        // ---- UX anti-doble envío / ya registrado ----
+        (function() {
+            const form = document.getElementById('scan-form');
+            const btn = document.getElementById('btnSubmit');
+            // Estado desde blade
+            const alreadyScanned = @json($alreadyScanned ?? false);
+
+            if (!form || !btn) return;
+
+            // Si ya estaba registrado, bloquear submit
+            if (alreadyScanned) {
+                form.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    // Nada que hacer: ya registrado
+                });
+            } else {
+                // Evitar doble click mientras se envía
+                form.addEventListener('submit', () => {
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+                });
+            }
         })();
     </script>
 @endpush
-
-
-
-{{--            function getLocation(high=false){
-                if (!navigator.geolocation) { alert('Geolocalización no soportada'); return; }
-                const opts = { enableHighAccuracy: high, timeout: 15000, maximumAge: 0 };
-                navigator.geolocation.getCurrentPosition(
-                  pos => {
-                    const { latitude, longitude, accuracy } = pos.coords;
-                    latInput.value = latitude;
-                    lngInput.value = longitude;
-                    accInput.value = Math.round(accuracy ?? 0);
-                    updateGpsStatus(true, latitude, longitude, Math.round(accuracy ?? 0));
-                    // mostrar botón "Mejorar precisión" si accuracy > 50 m
-                    if ((accuracy ?? 9999) > 50) btnImproveAcc?.classList.remove('d-none');
-                  },
-                  err => {
-                    console.warn(err);
-                    updateGpsStatus(false);
-                    alert('No se pudo obtener la ubicación. Verificá permisos de GPS y datos.');
-                  },
-                  opts
-                );
-              }  --}}
-
-
