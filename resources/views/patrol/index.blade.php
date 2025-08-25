@@ -66,10 +66,26 @@
                         @php
                             $route = $a->route;
                             $branchName = $route->branch->name ?? '—';
-                            // Usar relaciones ya cargadas para evitar N+1
-                            $total = $route?->checkpoints?->count() ?? 0;
-                            $done = $a->scans?->count() ?? 0;
+
+                            // Conteos precargados desde el controlador
+                            $done = (int) ($a->scans_count ?? 0);
+                            $totalFromSnapshot = (int) ($a->checkpoints_total ?? 0);
+
+                            // Fallback compat:
+                            // - Si no hay snapshot (total=0) y la asignación está COMPLETADA, fijamos total=done => 100%.
+                            // - Si no hay snapshot y NO está completa, usamos la cantidad actual de la ruta (aprox).
+                            if ($totalFromSnapshot === 0) {
+                                if ($a->status === 'completed') {
+                                    $total = max(1, $done);
+                                } else {
+                                    $total = (int) ($route?->checkpoints?->count() ?? 0);
+                                }
+                            } else {
+                                $total = $totalFromSnapshot;
+                            }
+
                             $progress = $total ? intval(min(100, ($done * 100) / $total)) : 0;
+
                             $clr =
                                 [
                                     'scheduled' => 'secondary',
@@ -78,15 +94,26 @@
                                     'missed' => 'warning',
                                     'cancelled' => 'dark',
                                 ][$a->status] ?? 'secondary';
+
+                            $estadoTranslation = [
+                                'scheduled' => 'Programada',
+                                'in_progress' => 'En progreso',
+                                'completed' => 'Completada',
+                                'missed' => 'Perdida',
+                                'cancelled' => 'Cancelada',
+                            ];
                             $estadoEspañol = $estadoTranslation[$a->status] ?? 'Desconocido';
-                            $canScan = $a->status !== 'completed' && ($total === 0 || $done < $total);
-                        @endphp
+
+                            $canScan =
+                            in_array($a->status, ['scheduled', 'in_progress']) && ($total === 0 || $done < $total); @endphp
+
                         <tr>
                             <td>{{ $a->id }}</td>
                             <td>
                                 <div class="fw-semibold">{{ $route->name ?? '—' }}</div>
                                 <div class="small text-muted">Progreso: {{ $done }}/{{ $total }}
-                                    ({{ $progress }}%)</div>
+                                    ({{ $progress }}%)
+                                </div>
                                 <div class="progress" style="height:6px; max-width:220px;">
                                     <div class="progress-bar" role="progressbar" style="width: {{ $progress }}%;"></div>
                                 </div>
