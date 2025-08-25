@@ -1,73 +1,76 @@
 {{-- resources/views/admin/patrol/routes/create.blade.php --}}
 @extends('adminlte::page')
-@section('title', 'Nueva Ruta')
+@section('title','Nueva Ruta')
 
 @section('content_header')
-    <h1>
-        Nueva Ruta</h1>
+  <h1>Nueva Ruta</h1>
 @endsection
 
 @section('content')
 
-    @if ($errors->any())
-        <x-adminlte-alert theme="danger" title="Error">
-            <ul class="mb-0">
-                @foreach ($errors->all() as $e)
-                    <li>{{ $e }}</li>
-                @endforeach
-            </ul>
-        </x-adminlte-alert>
-    @endif
+  @if ($errors->any())
+    <x-adminlte-alert theme="danger" title="Error">
+      <ul class="mb-0">@foreach ($errors->all() as $e) <li>{{ $e }}</li> @endforeach</ul>
+    </x-adminlte-alert>
+  @endif
 
+  <x-adminlte-card theme="light" title="Datos de la ruta" icon="fas fa-route">
     <form method="POST" action="{{ route('admin.patrol.routes.store') }}">
-        @csrf
+      @csrf
 
-        <div class="row">
-            <div class="col-md-6">
-                <x-adminlte-select name="branch_id" label="Sucursal" required>
-                    @foreach ($branches as $id => $name)
-                        <option value="{{ $id }}" @selected(old('branch_id') == $id)>{{ $name }}</option>
-                    @endforeach
-                </x-adminlte-select>
-            </div>
-            <div class="col-md-6">
-                <x-adminlte-input name="name" label="Nombre" value="{{ old('name') }}" required />
-            </div>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Nombre *</label>
+          <input type="text" name="name" class="form-control" required
+                 value="{{ old('name') }}">
         </div>
 
-        <div class="row">
-            <div class="col-md-4">
-                <x-adminlte-input type="number" name="expected_duration_min" label="Duración esperada (min)"
-                    value="{{ old('expected_duration_min', 30) }}" min="5" max="480" required />
-            </div>
-            <div class="col-md-4">
-                {{-- Activa --}}
-                <div class="form-group">
-                    <label class="form-label d-block mb-1">Activa</label>
-                    <input type="hidden" name="active" value="0">
-                    <input type="checkbox" name="active" data-toggle="toggle" :checked="(bool) old('active', true)" />
-                </div>
-            </div>
-
-            <div class="col-md-4">
-                {{-- QR obligatorio --}}
-                <div class="form-group">
-                    <label class="form-label d-block mb-1">QR obligatorio</label>
-                    <input type="hidden" name="qr_required" value="0">
-                    <input type="checkbox" name="qr_required" data-toggle="toggle"
-                        :checked="(bool) old('qr_required', true)" />
-                </div>
-            </div>
+        <div class="col-md-6">
+          <label class="form-label">Sucursal *</label>
+          <select name="branch_id" class="form-select" required>
+            <option value="">— Elegí —</option>
+            @foreach($branches as $b)
+              <option value="{{ $b->id }}" @selected(old('branch_id')==$b->id)>
+                {{ $b->name }}
+              </option>
+            @endforeach
+          </select>
         </div>
 
-        <div class="row">
-            <div class="col-md-4">
-                <x-adminlte-input type="number" name="min_radius_m" label="Radio mínimo GPS (m)"
-                    value="{{ old('min_radius_m', 20) }}" min="5" max="200" />
-            </div>
+        <div class="col-md-4">
+          <label class="form-label">Duración esperada (min) *</label>
+          <input type="number" name="expected_duration_min" min="1" step="1"
+                 class="form-control" value="{{ old('expected_duration_min', 30) }}" required>
         </div>
 
-        <x-adminlte-button type="submit" class="mt-2" label="Guardar" theme="primary" icon="fas fa-save" />
-        <a href="{{ route('admin.patrol.routes.index') }}" class="btn btn-outline-secondary mt-2">Cancelar</a>
+        <div class="col-md-4">
+          <label class="form-label">Radio mínimo (m) *</label>
+          <input type="number" name="min_radius_m" min="1" step="1"
+                 class="form-control" value="{{ old('min_radius_m', 20) }}" required>
+        </div>
+
+        <div class="col-md-4 d-flex align-items-end">
+          <div class="form-check me-4">
+            {{-- Hidden para que siempre llegue --}}
+            <input type="hidden" name="qr_required" value="0">
+            <input class="form-check-input" type="checkbox" id="qr_required" name="qr_required" value="1"
+                   @checked(old('qr_required', 1))>
+            <label class="form-check-label" for="qr_required">QR requerido</label>
+          </div>
+
+          <div class="form-check">
+            <input type="hidden" name="active" value="0">
+            <input class="form-check-input" type="checkbox" id="active" name="active" value="1"
+                   @checked(old('active', 1))>
+            <label class="form-check-label" for="active">Activo</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-3">
+        <button class="btn btn-primary"><i class="fas fa-save"></i> Guardar</button>
+        <a href="{{ route('admin.patrol.routes.index') }}" class="btn btn-outline-secondary">Volver</a>
+      </div>
     </form>
+  </x-adminlte-card>
 @endsection

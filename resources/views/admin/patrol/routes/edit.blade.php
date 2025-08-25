@@ -3,7 +3,7 @@
 @section('title','Editar Ruta')
 
 @section('content_header')
-  <h1>Editar Ruta • {{ $route->name }}</h1>
+  <h1>Editar Ruta #{{ $route->id }}</h1>
 @endsection
 
 @section('content')
@@ -11,60 +11,70 @@
   @if (session('success'))
     <x-adminlte-alert theme="success" title="OK">{{ session('success') }}</x-adminlte-alert>
   @endif
-
   @if ($errors->any())
     <x-adminlte-alert theme="danger" title="Error">
       <ul class="mb-0">@foreach ($errors->all() as $e) <li>{{ $e }}</li> @endforeach</ul>
     </x-adminlte-alert>
   @endif
 
-  <form method="POST" action="{{ route('admin.patrol.routes.update', $route) }}">
-    @csrf @method('PUT')
+  <x-adminlte-card theme="light" title="Datos de la ruta" icon="fas fa-route">
+    <form method="POST" action="{{ route('admin.patrol.routes.update', $route) }}">
+      @csrf
+      @method('PUT')
 
-    <div class="row">
-      <div class="col-md-6">
-        <x-adminlte-select name="branch_id" label="Sucursal" required>
-          @foreach($branches as $id => $name)
-            <option value="{{ $id }}" @selected(old('branch_id', $route->branch_id)==$id)>{{ $name }}</option>
-          @endforeach
-        </x-adminlte-select>
-      </div>
-      <div class="col-md-6">
-        <x-adminlte-input name="name" label="Nombre" value="{{ old('name', $route->name) }}" required />
-      </div>
-    </div>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Nombre *</label>
+          <input type="text" name="name" class="form-control" required
+                 value="{{ old('name', $route->name) }}">
+        </div>
 
-    <div class="row">
-      <div class="col-md-4">
-        <x-adminlte-input type="number" name="expected_duration_min" label="Duración esperada (min)"
-          value="{{ old('expected_duration_min', $route->expected_duration_min) }}" min="5" max="480" required />
-      </div>
-      <div class="col-md-4">
-        <div class="form-group">
-          <label class="form-label d-block mb-1">Activa</label>
-          <input type="hidden" name="active" value="0">
-          <x-adminlte-input-switch name="active" data-on-text="Sí" data-off-text="No"
-            @if(old('active', $route->active)) checked @endif />
+        <div class="col-md-6">
+          <label class="form-label">Sucursal *</label>
+          <select name="branch_id" class="form-select" required>
+            <option value="">— Elegí —</option>
+            @foreach($branches as $b)
+              <option value="{{ $b->id }}" @selected(old('branch_id', $route->branch_id)==$b->id)>
+                {{ $b->name }}
+              </option>
+            @endforeach
+          </select>
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Duración esperada (min) *</label>
+          <input type="number" name="expected_duration_min" min="1" step="1"
+                 class="form-control" value="{{ old('expected_duration_min', $route->expected_duration_min) }}" required>
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Radio mínimo (m) *</label>
+          <input type="number" name="min_radius_m" min="1" step="1"
+                 class="form-control" value="{{ old('min_radius_m', $route->min_radius_m) }}" required>
+        </div>
+
+        <div class="col-md-4 d-flex align-items-end">
+          <div class="form-check me-4">
+            <input type="hidden" name="qr_required" value="0">
+            <input class="form-check-input" type="checkbox" id="qr_required" name="qr_required" value="1"
+                   @checked(old('qr_required', (int)$route->qr_required))>
+            <label class="form-check-label" for="qr_required">QR requerido</label>
+          </div>
+
+          <div class="form-check">
+            <input type="hidden" name="active" value="0">
+            <input class="form-check-input" type="checkbox" id="active" name="active" value="1"
+                   @checked(old('active', (int)$route->active))>
+            <label class="form-check-label" for="active">Activo</label>
+          </div>
         </div>
       </div>
-      <div class="col-md-4">
-        <div class="form-group">
-          <label class="form-label d-block mb-1">QR obligatorio</label>
-          <input type="hidden" name="qr_required" value="0">
-          <x-adminlte-input-switch name="qr_required" data-on-text="Sí" data-off-text="No"
-            @if(old('qr_required', $route->qr_required)) checked @endif />
-        </div>
-      </div>
-    </div>
 
-    <div class="row">
-      <div class="col-md-4">
-        <x-adminlte-input type="number" name="min_radius_m" label="Radio mínimo GPS (m)"
-          value="{{ old('min_radius_m', $route->min_radius_m) }}" min="5" max="200" />
+      <div class="mt-3">
+        <button class="btn btn-primary"><i class="fas fa-save"></i> Guardar cambios</button>
+        <a href="{{ route('admin.patrol.routes.index') }}" class="btn btn-outline-secondary">Volver</a>
       </div>
-    </div>
-
-    <x-adminlte-button type="submit" class="mt-2" label="Actualizar" theme="primary" icon="fas fa-save" />
-    <a href="{{ route('admin.patrol.routes.index') }}" class="btn btn-outline-secondary mt-2">Volver</a>
-  </form>
+    </form>
+  </x-adminlte-card>
 @endsection
+  
