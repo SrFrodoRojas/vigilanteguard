@@ -7,6 +7,9 @@ use App\Models\PatrolAssignment;
 use App\Models\PatrolRoute;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\ValidationException;
 
 class PatrolAssignmentController extends Controller
 {
@@ -48,6 +51,7 @@ class PatrolAssignmentController extends Controller
 
     public function update(Request $r, PatrolAssignment $assignment)
     {
+        // Validación compatible con tu flujo actual
         $data = $r->validate([
             'guard_id'        => 'required|exists:users,id',
             'patrol_route_id' => 'required|exists:patrol_routes,id',
@@ -56,8 +60,41 @@ class PatrolAssignmentController extends Controller
             'status'          => 'nullable|in:scheduled,in_progress,completed,missed,cancelled',
         ]);
 
-        $assignment->update($data);
-        return back()->with('success', 'Asignación actualizada.');
+        $strict = (bool) config('patrol.strict_assignment_transitions', false);
+
+        $from = (string) ($assignment->status ?? 'scheduled');
+        $to   = (string) ($data['status'] ?? $from);
+
+        // Si el modo estricto está activo y pretenden cambiar a una transición inválida → 422
+        if ($strict && $to !== $from && ! $this->isAllowedTransition($from, $to)) {
+            throw ValidationException::withMessages([
+                'status' => "Transición inválida: {$from} → {$to}",
+            ]);
+        }
+
+        DB::transaction(function () use ($assignment, $data, $from, $to) {
+            // Aplicar cambios básicos
+            $assignment->fill($data);
+
+            // Conveniencias suaves (solo si existen las columnas):
+            // - al entrar en progreso, setear started_at si no vino
+            if ($from !== 'in_progress' && $to === 'in_progress'
+                && Schema::hasColumn($assignment->getTable(), 'started_at')
+                && empty($assignment->started_at)) {
+                $assignment->started_at = now();
+            }
+
+            // - al pasar a estado terminal, setear ended_at si no vino
+            if ($from !== $to && in_array($to, ['completed', 'missed', 'cancelled'], true)
+                && Schema::hasColumn($assignment->getTable(), 'ended_at')
+                && empty($assignment->ended_at)) {
+                $assignment->ended_at = now();
+            }
+
+            $assignment->save();
+        });
+
+        return back()->with('success', "Asignación actualizada: {$from} → {$to}");
     }
 
     public function destroy(PatrolAssignment $assignment)
@@ -80,4 +117,28 @@ class PatrolAssignmentController extends Controller
             ->sortBy('name')
             ->values();
     }
+
+    /**
+     * Transiciones válidas:
+     * scheduled -> in_progress
+     * in_progress -> completed|missed|cancelled
+     * completed/missed/cancelled -> terminales
+     */
+    private function isAllowedTransition(string $from, string $to): bool
+    {
+        $map = [
+            'scheduled'   => ['in_progress'],
+            'in_progress' => ['completed', 'missed', 'cancelled'],
+            'completed'   => [],
+            'missed'      => [],
+            'cancelled'   => [],
+        ];
+
+        $from = $from ?: 'scheduled';
+        $to   = $to ?: $from;
+
+        // Permitimos "no cambio" (editar otros campos sin cambiar status)
+        return in_array($to, $map[$from] ?? [], true) || $from === $to;
+    }
+
 }

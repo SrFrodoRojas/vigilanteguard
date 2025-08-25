@@ -7,6 +7,7 @@
         .hint {
             font-size: .95rem;
         }
+
         .gps-pill {
             font-size: .9rem;
         }
@@ -38,7 +39,8 @@
     {{-- Instrucciones + acciones --}}
     <x-adminlte-card theme="light" title="¿Cómo registrar este punto?" icon="fas fa-info-circle">
         <ol class="mb-2">
-            <li>Escaneá el código QR físico del punto <span class="text-muted">(o abrí esta pantalla desde ese QR)</span>.</li>
+            <li>Escaneá el código QR físico del punto <span class="text-muted">(o abrí esta pantalla desde ese QR)</span>.
+            </li>
             <li>Tocá <b>Tomar ubicación</b> para capturar tu GPS.</li>
             <li>Presioná <b>Registrar paso por el punto</b>.</li>
         </ol>
@@ -99,7 +101,8 @@
         <x-adminlte-card theme="primary" icon="fas fa-map-marker-alt" title="Punto: {{ $checkpoint->name }}">
             <dl class="row mb-0">
                 <dt class="col-sm-4">Ruta</dt>
-                <dd class="col-sm-8">{{ optional($checkpoint->route)->name }} ({{ optional(optional($checkpoint->route)->branch)->name ?? '—' }})</dd>
+                <dd class="col-sm-8">{{ optional($checkpoint->route)->name }}
+                    ({{ optional(optional($checkpoint->route)->branch)->name ?? '—' }})</dd>
 
                 <dt class="col-sm-4">Radio permitido</dt>
                 <dd class="col-sm-8">{{ $checkpoint->radius_m }} m</dd>
@@ -163,13 +166,15 @@
             const btnGetLocation = document.getElementById('btnGetLocation');
             const btnImproveAcc = document.getElementById('btnImproveAcc');
 
+            let watchId = null;
+
             function updateGpsStatus(ok, lat, lng, acc) {
                 if (ok) {
                     gpsStatus.className = 'badge bg-success gps-pill';
                     gpsStatus.textContent = 'Ubicación lista (±' + (acc ?? '?') + ' m)';
                     gpsDetails.classList.remove('d-none');
-                    latLbl.textContent = lat?.toFixed(6) ?? '—';
-                    lngLbl.textContent = lng?.toFixed(6) ?? '—';
+                    latLbl.textContent = (lat ?? '—') && lat.toFixed ? lat.toFixed(6) : lat;
+                    lngLbl.textContent = (lng ?? '—') && lng.toFixed ? lng.toFixed(6) : lng;
                     accLbl.textContent = (acc ?? '—') + ' m';
                 } else {
                     gpsStatus.className = 'badge bg-secondary gps-pill';
@@ -178,48 +183,78 @@
                 }
             }
 
-            function getLocation(high = false) {
+            function startWatch(high = false) {
                 if (!navigator.geolocation) {
                     alert('Geolocalización no soportada');
                     return;
                 }
+                // Reiniciar watcher si ya existía
+                if (watchId !== null) {
+                    navigator.geolocation.clearWatch(watchId);
+                    watchId = null;
+                }
                 const opts = {
                     enableHighAccuracy: high,
-                    timeout: 15000,
+                    timeout: 20000,
                     maximumAge: 0
                 };
-                navigator.geolocation.getCurrentPosition(
+                watchId = navigator.geolocation.watchPosition(
                     pos => {
                         const {
                             latitude,
                             longitude,
                             accuracy
-                        } = pos.coords;
-                        latInput.value = latitude;
-                        lngInput.value = longitude;
-                        const fixedAccuracy = 20;
-                        accInput.value = fixedAccuracy;
-                        updateGpsStatus(true, latitude, longitude, fixedAccuracy);
-                        if ((fixedAccuracy ?? 9999) > 50) btnImproveAcc?.classList.remove('d-none');
+                        } = pos.coords || {};
+                        // Guardar valores reales (¡sin fixedAccuracy!)
+                        latInput.value = latitude ?? '';
+                        lngInput.value = longitude ?? '';
+                        const acc = Math.round(accuracy ?? 0);
+                        accInput.value = acc;
+
+                        updateGpsStatus(true, latitude, longitude, acc);
+
+                        // Mostrar botón "Mejorar precisión" si > 50 m; ocultarlo si ya mejoró
+                        if ((acc ?? 9999) > 50) {
+                            btnImproveAcc?.classList.remove('d-none');
+                        } else {
+                            btnImproveAcc?.classList.add('d-none');
+                        }
                     },
                     err => {
                         console.warn(err);
                         updateGpsStatus(false);
-                        alert('No se pudo obtener la ubicación. Verificá permisos de GPS y datos.');
+                        // No alert intrusivo en watch; el usuario puede reintentar
                     },
                     opts
                 );
             }
 
-            // Asignar el evento de clic al botón "Tomar ubicación"
+            // Iniciar captura al presionar "Tomar ubicación"
             if (btnGetLocation) {
-                btnGetLocation.addEventListener('click', () => getLocation(false));
+                btnGetLocation.addEventListener('click', () => startWatch(false));
             }
 
-            // Asignar el evento de clic al botón "Mejorar precisión"
+            // Forzar modo de alta precisión
             if (btnImproveAcc) {
-                btnImproveAcc.addEventListener('click', () => getLocation(true));
+                btnImproveAcc.addEventListener('click', () => startWatch(true));
             }
+
+            // Si la pestaña vuelve al frente, re-enganchar (algunos SO pausan sensores)
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden && watchId !== null) {
+                    // reinicia en el modo estándar; si el user pidió alta precisión volverá a tocar el botón
+                    startWatch(false);
+                }
+            });
+
+            // Validación suave al enviar: evitar POST sin lat/lng
+            document.querySelector('form[action="{{ route('patrol.scan.store') }}"]')
+                ?.addEventListener('submit', (e) => {
+                    if (!latInput.value || !lngInput.value) {
+                        e.preventDefault();
+                        alert('Primero tomá la ubicación (botón "Tomar ubicación").');
+                    }
+                });
 
             // --- Hooks del lector de QR ---
             const qrTokenInput = document.getElementById('qr_token');
@@ -289,5 +324,3 @@
                   opts
                 );
               }  --}}
-
-
