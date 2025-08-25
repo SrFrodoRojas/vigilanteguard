@@ -32,11 +32,25 @@ class PatrolAssignmentController extends Controller
             'scheduled_end'   => 'required|date|after:scheduled_start',
         ]);
 
-        // por defecto
+        // estado inicial
         $data['status'] = 'scheduled';
 
-        PatrolAssignment::create($data);
-        return redirect()->route('admin.patrol.assignments.index')->with('success', 'Asignación creada.');
+        \Illuminate\Support\Facades\DB::transaction(function () use ($data) {
+            /** @var \App\Models\PatrolAssignment $assignment */
+            $assignment = \App\Models\PatrolAssignment::create($data);
+
+            // SNAPSHOT: checkpoint_ids actuales de la ruta
+            $checkpointIds = \App\Models\Checkpoint::where('patrol_route_id', $assignment->patrol_route_id)
+                ->pluck('id')->all();
+
+            if (! empty($checkpointIds)) {
+                // sync sin detach (recién creada, por seguridad igual no quita nada)
+                $assignment->checkpoints()->sync($checkpointIds, false);
+            }
+        });
+
+        return redirect()->route('admin.patrol.assignments.index')
+            ->with('success', 'Asignación creada y snapshot de checkpoints tomado.');
     }
 
     public function edit(PatrolAssignment $assignment)
@@ -46,7 +60,7 @@ class PatrolAssignmentController extends Controller
         return view('admin.patrol.assignments.edit', compact('assignment', 'routes', 'guards'));
     }
 
-    public function update(Request $r, PatrolAssignment $assignment)
+    public function update(Request $r, \App\Models\PatrolAssignment $assignment)
     {
         $data = $r->validate([
             'guard_id'        => 'required|exists:users,id',
@@ -56,12 +70,39 @@ class PatrolAssignmentController extends Controller
             'status'          => 'nullable|in:scheduled,in_progress,completed,missed,cancelled',
         ]);
 
-        $assignment->update($data);
+        $currentStatus = $assignment->status;
+        $targetStatus  = $data['status'] ?? $currentStatus;
+
+        // 1) Transición de estado válida
+        if ($targetStatus !== $currentStatus && ! $this->isAllowedTransition($currentStatus, $targetStatus)) {
+            return back()->withErrors("Transición no permitida: {$currentStatus} → {$targetStatus}")->withInput();
+        }
+
+        // 2) Si hay scans, NO permitir cambiar guardia ni ruta
+        $changingGuard = (int) $data['guard_id'] !== (int) $assignment->guard_id;
+        $changingRoute = (int) $data['patrol_route_id'] !== (int) $assignment->patrol_route_id;
+        if (($changingGuard || $changingRoute) && $assignment->scans()->exists()) {
+            return back()->withErrors('No se puede cambiar guardia/ruta porque ya existen registros de escaneo.')->withInput();
+        }
+
+        // 3) Fechas solo editables cuando está scheduled
+        $startChanged  = ! $assignment->scheduled_start->equalTo(\Carbon\Carbon::parse($data['scheduled_start']));
+        $endChanged    = ! $assignment->scheduled_end->equalTo(\Carbon\Carbon::parse($data['scheduled_end']));
+        $changingDates = $startChanged || $endChanged;
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($assignment, $data, $targetStatus) {
+            $data['status'] = $targetStatus; // normaliza cuando viene null
+            $assignment->update($data);
+        });
+
         return back()->with('success', 'Asignación actualizada.');
     }
 
     public function destroy(PatrolAssignment $assignment)
     {
+        if ($assignment->scans()->exists()) {
+            return back()->withErrors('No se puede eliminar: la asignación ya tiene escaneos.');
+        }
         $assignment->delete();
         return back()->with('success', 'Asignación eliminada.');
     }
@@ -80,4 +121,24 @@ class PatrolAssignmentController extends Controller
             ->sortBy('name')
             ->values();
     }
+
+    /**
+     * Reglas de transición de estado:
+     * scheduled   -> in_progress | cancelled
+     * in_progress -> completed | missed | cancelled
+     * completed/missed/cancelled -> terminales (sin cambios)
+     */
+    private function isAllowedTransition(string $from, string $to): bool
+    {
+        if ($from === $to) {
+            return true;
+        }
+
+        return match ($from) {
+            'scheduled' => in_array($to, ['in_progress', 'cancelled'], true),
+            'in_progress' => in_array($to, ['completed', 'missed', 'cancelled'], true),
+            default => false,
+        };
+    }
+
 }
