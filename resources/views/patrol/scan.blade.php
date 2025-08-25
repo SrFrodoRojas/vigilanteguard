@@ -19,7 +19,6 @@
 @endsection
 
 @section('content')
-
     @if (session('success'))
         <x-adminlte-alert theme="success" title="OK">{{ session('success') }}</x-adminlte-alert>
     @endif
@@ -36,7 +35,6 @@
         </x-adminlte-alert>
     @endif
 
-    {{-- Instrucciones + acciones --}}
     <x-adminlte-card theme="light" title="¿Cómo registrar este punto?" icon="fas fa-info-circle">
         <ol class="mb-2">
             <li>Escaneá el código QR físico del punto <span class="text-muted">(o abrí esta pantalla desde ese QR)</span>.
@@ -68,7 +66,7 @@
         <canvas id="qrCanvas" class="d-none"></canvas>
         <div id="qrHint" class="small text-muted d-none">Apuntá al QR. Se completará automáticamente.</div>
 
-        {{-- Muestra estado de GPS --}}
+        {{-- Estado GPS --}}
         <div class="mt-3">
             <span class="badge bg-secondary gps-pill" id="gpsStatus">Ubicación no capturada</span>
             <div class="small text-muted">Consejo: activá el GPS y los datos. En iPhone se requiere HTTPS.</div>
@@ -81,7 +79,7 @@
         </div>
     </x-adminlte-card>
 
-    {{-- Si no hay checkpoint (entraste sin ?c), mostramos un selector de asignación --}}
+    {{-- Selector de asignación si no hay checkpoint en la URL --}}
     @if (empty($checkpoint) && !empty($myAssignments) && $myAssignments->count())
         <x-adminlte-card theme="light" title="Seleccioná tu patrulla" icon="fas fa-clipboard-list">
             <div class="row">
@@ -126,7 +124,7 @@
         </x-adminlte-card>
     @endif
 
-    {{-- FORM: siempre visible --}}
+    {{-- FORM --}}
     <x-adminlte-card>
         @php $alreadyScanned = $alreadyScanned ?? false; @endphp
 
@@ -154,22 +152,17 @@
             <a href="{{ route('patrol.index') }}" class="btn btn-outline-secondary">Volver</a>
         </form>
     </x-adminlte-card>
-
-
 @endsection
 
 @push('js')
     <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
     <script>
         (function() {
-            // --- Asignación desde select si no había checkpoint ---
+            // ----- Asignación select → hidden
             const assignmentSelect = document.getElementById('assignmentSelect');
             const assignmentInput = document.getElementById('assignment_id');
             if (assignmentSelect && assignmentInput) {
-                assignmentSelect.addEventListener('change', () => {
-                    assignmentInput.value = assignmentSelect.value || '';
-                });
-                // Auto-select si solo hay 1 opción válida
+                assignmentSelect.addEventListener('change', () => assignmentInput.value = assignmentSelect.value || '');
                 const choices = Array.from(assignmentSelect?.options || []).filter(o => o.value);
                 if (choices.length === 1) {
                     assignmentSelect.value = choices[0].value;
@@ -177,7 +170,7 @@
                 }
             }
 
-            // ---------- GPS en tiempo real (watchPosition) ----------
+            // ----- GPS (watchPosition)
             const gpsStatus = document.getElementById('gpsStatus');
             const gpsDetails = document.getElementById('gpsDetails');
             const latLbl = document.getElementById('latLbl');
@@ -233,39 +226,24 @@
                         lngInput.value = longitude ?? '';
                         const acc = Math.round(accuracy ?? 0);
                         accInput.value = acc;
-
                         updateGpsStatus(true, latitude, longitude, acc);
-
-                        // Mostrar "Mejorar precisión" si > 50 m
-                        if ((acc ?? 9999) > 50) {
-                            btnImproveAcc?.classList.remove('d-none');
-                        } else {
-                            btnImproveAcc?.classList.add('d-none');
-                        }
+                        if ((acc ?? 9999) > 50) btnImproveAcc?.classList.remove('d-none');
+                        else btnImproveAcc?.classList.add('d-none');
                     },
-                    err => {
-                        console.warn(err);
+                    _err => {
                         updateGpsStatus(false);
-                        // sin alert intrusivo en watch
                     },
                     opts
                 );
             }
 
-            if (btnGetLocation) {
-                btnGetLocation.addEventListener('click', () => startWatch(false));
-            }
-            if (btnImproveAcc) {
-                btnImproveAcc.addEventListener('click', () => startWatch(true));
-            }
+            btnGetLocation?.addEventListener('click', () => startWatch(false));
+            btnImproveAcc?.addEventListener('click', () => startWatch(true));
             document.addEventListener('visibilitychange', () => {
                 if (!document.hidden && watchId !== null) startWatch(false);
             });
 
-            // (Opcional) iniciar al cargar para no olvidar el botón:
-            // startWatch(false);
-
-            // ---------- Cámara en vivo con jsQR ----------
+            // ----- Cámara en vivo + jsQR
             const btnCam = document.getElementById('btnOpenCamera');
             const video = document.getElementById('qrVideo');
             const canvas = document.getElementById('qrCanvas');
@@ -281,11 +259,10 @@
                 let token = null;
                 try {
                     if (str.includes('?')) {
-                        const urlParams = new URLSearchParams(str.split('?')[1]);
-                        token = urlParams.get('c');
+                        const qs = new URLSearchParams(str.split('?')[1]);
+                        token = qs.get('c');
                     }
                 } catch (_) {}
-                // UUID puro
                 const uuidRe = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
                 if (!token && uuidRe.test(str)) token = str;
                 return token;
@@ -305,7 +282,6 @@
                     await video.play();
                     video.classList.remove('d-none');
                     hint.classList.remove('d-none');
-
                     const ctx = canvas.getContext('2d', {
                         willReadFrequently: true
                     });
@@ -348,7 +324,6 @@
                 video.classList.add('d-none');
                 hint.classList.add('d-none');
             }
-
             btnCam?.addEventListener('click', () => {
                 if (!stream) startCamera();
                 else stopCamera();
@@ -357,21 +332,21 @@
                 if (document.hidden) stopCamera();
             });
 
-            // ---------- Lector de imagen (galería) ----------
+            // ----- Galería
             const fileFromGallery = document.getElementById('fileFromGallery');
             fileFromGallery?.addEventListener('change', function() {
                 if (!this.files?.length) return;
                 const reader = new FileReader();
-                reader.onload = function(event) {
+                reader.onload = function(e) {
                     const img = new Image();
                     img.onload = function() {
-                        const canvas = document.createElement('canvas');
-                        const ctx = canvas.getContext('2d');
-                        canvas.width = img.width;
-                        canvas.height = img.height;
-                        ctx.drawImage(img, 0, 0, img.width, img.height);
-                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                        const code = jsQR(imageData.data, canvas.width, canvas.height);
+                        const c = document.createElement('canvas');
+                        const cx = c.getContext('2d');
+                        c.width = img.width;
+                        c.height = img.height;
+                        cx.drawImage(img, 0, 0);
+                        const data = cx.getImageData(0, 0, c.width, c.height);
+                        const code = jsQR(data.data, c.width, c.height);
                         if (code && code.data) {
                             const token = extractQrToken(code.data);
                             if (token) {
@@ -384,53 +359,35 @@
                             alert('No se pudo procesar el código QR.');
                         }
                     };
-                    img.src = event.target.result;
+                    img.src = e.target.result;
                 };
                 reader.readAsDataURL(this.files[0]);
             });
 
-            // ---------- Guard de formulario (evita validation.required) ----------
-            const form = document.querySelector('form[action="{{ route('patrol.scan.store') }}"]');
+            // ----- Guard de formulario y anti-doble submit
+            const form = document.getElementById('scan-form');
+            const btn = document.getElementById('btnSubmit');
+            const alreadyScanned = @json($alreadyScanned ?? false);
+
             form?.addEventListener('submit', (e) => {
-                const qr = document.getElementById('qr_token')?.value?.trim();
-                const asg = document.getElementById('assignment_id')?.value?.trim();
-                const lat = document.getElementById('lat')?.value?.trim();
-                const lng = document.getElementById('lng')?.value?.trim();
+                if (alreadyScanned) {
+                    e.preventDefault();
+                    return;
+                }
                 const missing = [];
-                if (!asg) missing.push('Seleccionar una asignación');
-                if (!qr) missing.push('Escanear el QR del punto');
-                if (!lat || !lng) missing.push('Tomar ubicación (GPS)');
+                if (!document.getElementById('assignment_id')?.value) missing.push(
+                'Seleccionar una asignación');
+                if (!document.getElementById('qr_token')?.value) missing.push('Escanear el QR del punto');
+                if (!document.getElementById('lat')?.value || !document.getElementById('lng')?.value) missing
+                    .push('Tomar ubicación (GPS)');
                 if (missing.length) {
                     e.preventDefault();
                     alert('Faltan datos para registrar:\n- ' + missing.join('\n- '));
+                    return;
                 }
-                // Debug opcional:
-                // console.log('[SCAN SUBMIT]', {qr, asg, lat, lng, acc: document.getElementById('accuracy_m')?.value});
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
             });
-        })();
-
-        // ---- UX anti-doble envío / ya registrado ----
-        (function() {
-            const form = document.getElementById('scan-form');
-            const btn = document.getElementById('btnSubmit');
-            // Estado desde blade
-            const alreadyScanned = @json($alreadyScanned ?? false);
-
-            if (!form || !btn) return;
-
-            // Si ya estaba registrado, bloquear submit
-            if (alreadyScanned) {
-                form.addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    // Nada que hacer: ya registrado
-                });
-            } else {
-                // Evitar doble click mientras se envía
-                form.addEventListener('submit', () => {
-                    btn.disabled = true;
-                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
-                });
-            }
         })();
     </script>
 @endpush

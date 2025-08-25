@@ -21,7 +21,6 @@
 @endsection
 
 @section('content')
-
     @if (session('success'))
         <x-adminlte-alert theme="success" title="OK">{{ session('success') }}</x-adminlte-alert>
     @endif
@@ -39,7 +38,6 @@
     @endif
 
     @php
-        // Traducción de los estados al español
         $estadoTranslation = [
             'scheduled' => 'Programada',
             'in_progress' => 'En progreso',
@@ -68,9 +66,10 @@
                         @php
                             $route = $a->route;
                             $branchName = $route->branch->name ?? '—';
-                            $total = $route->checkpoints_count ?? ($route?->checkpoints()->count() ?? 0);
-                            $done = $a->scans_count ?? ($a->scans()->count() ?? 0);
-                            $progress = $total ? intval(($done * 100) / $total) : 0;
+                            // Usar relaciones ya cargadas para evitar N+1
+                            $total = $route?->checkpoints?->count() ?? 0;
+                            $done = $a->scans?->count() ?? 0;
+                            $progress = $total ? intval(min(100, ($done * 100) / $total)) : 0;
                             $clr =
                                 [
                                     'scheduled' => 'secondary',
@@ -79,15 +78,15 @@
                                     'missed' => 'warning',
                                     'cancelled' => 'dark',
                                 ][$a->status] ?? 'secondary';
-                            $estadoEspañol = $estadoTranslation[$a->status] ?? 'Desconocido'; // Traducción del estado
+                            $estadoEspañol = $estadoTranslation[$a->status] ?? 'Desconocido';
+                            $canScan = $a->status !== 'completed' && ($total === 0 || $done < $total);
                         @endphp
                         <tr>
                             <td>{{ $a->id }}</td>
                             <td>
                                 <div class="fw-semibold">{{ $route->name ?? '—' }}</div>
                                 <div class="small text-muted">Progreso: {{ $done }}/{{ $total }}
-                                    ({{ $progress }}%)
-                                </div>
+                                    ({{ $progress }}%)</div>
                                 <div class="progress" style="height:6px; max-width:220px;">
                                     <div class="progress-bar" role="progressbar" style="width: {{ $progress }}%;"></div>
                                 </div>
@@ -95,13 +94,10 @@
                             <td>{{ $branchName }}</td>
                             <td>{{ $a->scheduled_start }}</td>
                             <td>{{ $a->scheduled_end }}</td>
-                            <td>
-                                <span class="badge bg-{{ $clr }} badge-status">{{ $estadoEspañol }}</span>
-                            </td>
+                            <td><span class="badge bg-{{ $clr }} badge-status">{{ $estadoEspañol }}</span></td>
                             <td class="text-end">
                                 <div class="actions d-flex flex-wrap justify-content-end gap-2">
-                                    {{-- Abrir escáner (el QR físico nos manda con ?c=token, pero podés abrir la vista para usar la cámara) --}}
-                                    @if ($a->status !== 'completed')
+                                    @if ($canScan)
                                         <a href="{{ route('patrol.scan') }}?a={{ $a->id }}"
                                             class="btn btn-outline-primary btn-sm">
                                             <i class="fas fa-qrcode"></i> Escanear
@@ -112,7 +108,6 @@
                                         </button>
                                     @endif
 
-                                    {{-- Iniciar --}}
                                     @if ($a->status === 'scheduled')
                                         <form method="POST" action="{{ route('patrol.start', $a) }}" class="d-inline">
                                             @csrf
@@ -122,7 +117,6 @@
                                         </form>
                                     @endif
 
-                                    {{-- Finalizar --}}
                                     @if (in_array($a->status, ['scheduled', 'in_progress']))
                                         <form method="POST" action="{{ route('patrol.finish', $a) }}" class="d-inline">
                                             @csrf
@@ -143,7 +137,6 @@
             </table>
         </div>
 
-        {{-- Paginación si la pasás desde el controlador --}}
         @if (method_exists($assignments, 'links'))
             <div class="mt-2">{{ $assignments->links() }}</div>
         @endif
