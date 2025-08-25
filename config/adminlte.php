@@ -141,12 +141,6 @@ return [
             'can'   => 'patrol.manage',
         ],
         [
-            'text'  => 'Escanear Checkpoint',
-            'route' => 'patrol.scan',
-            'icon'  => 'fas fa-qrcode',
-            'can'   => 'patrol.scan',
-        ],
-        [
             'text'    => 'Rutas de Patrulla',
             'icon'    => 'fas fa-route',
             'can'     => 'patrol.manage',
