@@ -28,4 +28,14 @@ class PatrolAssignment extends Model
     {
         return $this->hasMany(\App\Models\PatrolAssignmentSnooze::class);
     }
+
+     public function checkpoints()
+    {
+        return $this->belongsToMany(
+            Checkpoint::class,
+            'patrol_assignment_checkpoints',
+            'patrol_assignment_id',
+            'checkpoint_id'
+        )->withTimestamps();
+    }
 }
