@@ -13,9 +13,15 @@ class PatrolController extends Controller
     {
         $now = now();
 
-        $assignments = PatrolAssignment::with(['route.checkpoints', 'route.branch', 'scans'])
+        $assignments = \App\Models\PatrolAssignment::with(['route.branch', 'scans'])
+            ->withCount([
+                // total del snapshot
+                'checkpoints as checkpoints_total',
+                // cantidad de scans (evita ->count() N+1 en la vista)
+                'scans as scans_count',
+            ])
             ->where('guard_id', auth()->id())
-            ->where('scheduled_end', '>=', $now->subHours(12)) // mostrar activas y las últimas
+            ->where('scheduled_end', '>=', $now->subHours(12))
             ->orderBy('scheduled_start', 'desc')
             ->get();
 
@@ -37,13 +43,45 @@ class PatrolController extends Controller
     /**
      * Finalizar patrulla (Policy: update).
      */
-    public function finish(PatrolAssignment $assignment)
+    public function finish(\App\Models\PatrolAssignment $assignment)
     {
         $this->authorize('update', $assignment);
 
-        $assignment->update(['status' => 'completed']);
+        // Total del snapshot (si no hay, lo construimos al vuelo)
+        $total = (int) $assignment->checkpoints()->count();
 
-        return back()->with('success', 'Patrulla finalizada.');
+        if ($total === 0) {
+            // Si no existe snapshot: preferimos congelar a lo escaneado (si hay),
+            // sino a los checkpoints actuales de la ruta (fallback).
+            $scannedIds = $assignment->scans()
+                ->pluck('checkpoint_id')->unique()->values()->all();
+
+            if (count($scannedIds)) {
+                $assignment->checkpoints()->sync($scannedIds);
+                $total = count($scannedIds);
+            } else {
+                $routeIds = \App\Models\Checkpoint::where('patrol_route_id', $assignment->patrol_route_id)
+                    ->pluck('id')->all();
+                $assignment->checkpoints()->sync($routeIds);
+                $total = count($routeIds);
+            }
+        }
+
+        // Hechos (distinct por checkpoint)
+        $done = (int) $assignment->scans()
+            ->distinct('checkpoint_id')
+            ->count('checkpoint_id');
+
+        $newStatus = ($total > 0 && $done >= $total) ? 'completed' : 'missed';
+
+        $assignment->update(['status' => $newStatus]);
+
+        return back()->with(
+            'success',
+            $newStatus === 'completed'
+            ? 'Patrulla finalizada (completa).'
+            : 'Patrulla finalizada como PERDIDA (faltan puntos).'
+        );
     }
 
     /**
