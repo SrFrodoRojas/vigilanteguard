@@ -2,48 +2,6 @@
 @extends('adminlte::page')
 @section('title', 'Mis Patrullas')
 
-@push('css')
-<style>
-  /* --- Responsive table/cards toggle --- */
-  @media (max-width: 767.98px) {
-    .desktop-table { display: none !important; }
-    .mobile-cards { display: grid; grid-template-columns: 1fr; gap: .75rem; }
-    .actions > * { margin-bottom: .5rem; } /* tu regla original para móvil */
-  }
-  @media (min-width: 768px) {
-    .desktop-table { display: block !important; }
-    .mobile-cards { display: none !important; }
-  }
-
-  /* --- Cards móviles táctiles --- */
-  .vg-card {
-    border: 1px solid rgba(0,0,0,.08);
-    border-radius: .5rem;
-    background: #fff;
-    box-shadow: 0 1px 3px rgba(0,0,0,.06);
-  }
-  .vg-card .vg-header {
-    display:flex; justify-content:space-between; align-items:center;
-    padding:.75rem .75rem .25rem .75rem;
-  }
-  .vg-card .vg-sub {
-    padding: 0 .75rem .5rem .75rem; color:#6c757d; font-size:.9rem;
-  }
-  .vg-card .vg-body { padding: .25rem .75rem .75rem .75rem; }
-  .vg-row {
-    display:flex; justify-content:space-between; align-items:center;
-    padding:.4rem 0; border-bottom:1px dashed rgba(0,0,0,.06);
-  }
-  .vg-row:last-child { border-bottom:0; }
-  .vg-label { font-weight:600; color:#6c757d; margin-right:.5rem; }
-  .vg-value { text-align:right; word-break:break-word; }
-  .vg-actions { display:grid; grid-template-columns:1fr 1fr; gap:.5rem; padding:.75rem; }
-  .vg-actions .btn { width:100%; }
-  .progress.progress-sm { height:6px; }
-  .badge-status { text-transform: capitalize; } /* tu regla original */
-</style>
-@endpush
-
 @section('content_header')
   <h1>Mis Patrullas</h1>
 @endsection
@@ -60,7 +18,7 @@
     <x-adminlte-alert theme="warning" title="Atención" class="mb-2" dismissable>
       {{ session('warning') }}
     </x-adminlte-alert>
-  @endif>
+  @endif
 
   @if (session('info'))
     <x-adminlte-alert theme="info" title="Info" class="mb-2" dismissable>
@@ -305,3 +263,45 @@
     @endif
   </x-adminlte-card>
 @endsection
+
+@push('css')
+<style>
+  /* --- Responsive table/cards toggle --- */
+  @media (max-width: 767.98px) {
+    .desktop-table { display: none !important; }
+    .mobile-cards { display: grid; grid-template-columns: 1fr; gap: .75rem; }
+    .actions > * { margin-bottom: .5rem; } /* tu regla original para móvil */
+  }
+  @media (min-width: 768px) {
+    .desktop-table { display: block !important; }
+    .mobile-cards { display: none !important; }
+  }
+
+  /* --- Cards móviles táctiles --- */
+  .vg-card {
+    border: 1px solid rgba(0,0,0,.08);
+    border-radius: .5rem;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  }
+  .vg-card .vg-header {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:.75rem .75rem .25rem .75rem;
+  }
+  .vg-card .vg-sub {
+    padding: 0 .75rem .5rem .75rem; color:#6c757d; font-size:.9rem;
+  }
+  .vg-card .vg-body { padding: .25rem .75rem .75rem .75rem; }
+  .vg-row {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:.4rem 0; border-bottom:1px dashed rgba(0,0,0,.06);
+  }
+  .vg-row:last-child { border-bottom:0; }
+  .vg-label { font-weight:600; color:#6c757d; margin-right:.5rem; }
+  .vg-value { text-align:right; word-break:break-word; }
+  .vg-actions { display:grid; grid-template-columns:1fr 1fr; gap:.5rem; padding:.75rem; }
+  .vg-actions .btn { width:100%; }
+  .progress.progress-sm { height:6px; }
+  .badge-status { text-transform: capitalize; } /* tu regla original */
+</style>
+@endpush
