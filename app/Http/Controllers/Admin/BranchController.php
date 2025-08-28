@@ -87,7 +87,7 @@ class BranchController extends Controller
             'manager_id' => $data['manager_id'] ?? null,
         ]);
 
-        return redirect()->route('admin.branches.index')->with('ok', 'Sucursal creada.');
+        return redirect()->route('branches.index')->with('ok', 'Sucursal creada.');
     }
 
     public function update(\Illuminate\Http\Request $request, Branch $branch)
@@ -112,7 +112,7 @@ class BranchController extends Controller
             'manager_id' => $data['manager_id'] ?? null,
         ]);
 
-        return redirect()->route('admin.branches.index')->with('ok', 'Sucursal actualizada.');
+        return redirect()->route('branches.index')->with('ok', 'Sucursal actualizada.');
     }
 
     public function edit(Branch $branch)

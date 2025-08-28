@@ -17,8 +17,9 @@ class ReportsController extends Controller
     {
         $user    = $request->user();
         $isAdmin = $user && method_exists($user, 'hasRole') ? $user->hasRole('admin') : false;
+        $tz      = 'America/Asuncion';
 
-        // 1) Validación segura (rango de fechas y filtros básicos)
+        // Validación
         $data = $request->validate([
             'from'      => ['nullable', 'date'],
             'to'        => ['nullable', 'date', 'after_or_equal:from'],
@@ -29,19 +30,23 @@ class ReportsController extends Controller
             'page'      => ['nullable', 'integer'],
         ]);
 
-        $from     = $data['from'] ?? null;
-        $to       = $data['to'] ?? null;
+        // Fechas por defecto = HOY
+        $from      = $data['from'] ?? \Carbon\Carbon::now($tz)->toDateString();
+        $to        = $data['to'] ?? \Carbon\Carbon::now($tz)->toDateString();
+        $fromStart = \Illuminate\Support\Carbon::parse($from, $tz)->startOfDay();
+        $toEnd     = \Illuminate\Support\Carbon::parse($to, $tz)->endOfDay();
+        $nowCap    = \Illuminate\Support\Carbon::now($tz)->min($toEnd); // hasta ahora o hasta fin del rango
+
         $branchId = $data['branch_id'] ?? null;
         $type     = $data['type'] ?? null;
         $status   = $data['status'] ?? null;
         $q        = trim($data['q'] ?? '');
 
-        // 2) Query base con scopes típicos
+        // Base para LISTADO (respeta 'status')
         $qAccess = \App\Models\Access::query()
             ->with(['user', 'branch'])
             ->withCount(['people as inside_count' => fn($qq) => $qq->whereNull('exit_at')])
-            ->when($from, fn($qq) => $qq->where('entry_at', '>=', \Illuminate\Support\Carbon::parse($from)->startOfDay()))
-            ->when($to, fn($qq) => $qq->where('entry_at', '<=', \Illuminate\Support\Carbon::parse($to)->endOfDay()))
+            ->whereBetween('entry_at', [$fromStart, $toEnd])
             ->when($type, fn($qq) => $qq->where('type', $type))
             ->when($status === 'inside', fn($qq) => $qq->whereNull('exit_at'))
             ->when($status === 'closed', fn($qq) => $qq->whereNotNull('exit_at'))
@@ -53,14 +58,14 @@ class ReportsController extends Controller
                 });
             });
 
-        // Scope por sucursal (no admin ve solo su sucursal)
+        // Scope sucursal
         if (! $isAdmin && $user) {
             $qAccess->where('branch_id', $user->branch_id);
         } elseif ($isAdmin && $branchId) {
             $qAccess->where('branch_id', $branchId);
         }
 
-        // 3) KPIs (consultas baratas, aprovechan índices recién creados)
+        // KPIs del listado
         $kpi = [
             'total'       => (clone $qAccess)->count('*'),
             'inside'      => (clone $qAccess)->whereNull('exit_at')->count('*'),
@@ -69,10 +74,36 @@ class ReportsController extends Controller
             'pedestrians' => (clone $qAccess)->where('type', 'pedestrian')->count('*'),
         ];
 
-        // 4) Listado paginado
+        // PROMEDIO (min): incluye salidas dentro del rango + adentro (sin salida) con entrada en el rango
+        $base = \App\Models\Access::query()
+            ->when(! $isAdmin && $user, fn($qq) => $qq->where('branch_id', $user->branch_id))
+            ->when($isAdmin && $branchId, fn($qq) => $qq->where('branch_id', $branchId))
+            ->when($type, fn($qq) => $qq->where('type', $type));
+
+        // Completados: exit_at dentro del rango
+        $completed = (clone $base)
+            ->whereNotNull('exit_at')
+            ->whereBetween('exit_at', [$fromStart, $toEnd])
+            ->selectRaw('COUNT(*) c, COALESCE(SUM(TIMESTAMPDIFF(MINUTE, entry_at, exit_at)),0) s')
+            ->first();
+
+        // En curso: sin salida, con entry_at dentro del rango (hasta ahora o fin del rango)
+        $ongoing = (clone $base)
+            ->whereNull('exit_at')
+            ->whereBetween('entry_at', [$fromStart, $toEnd])
+            ->selectRaw('COUNT(*) c, COALESCE(SUM(TIMESTAMPDIFF(MINUTE, entry_at, ?)),0) s', [$nowCap->format('Y-m-d H:i:s')])
+            ->first();
+
+        $sumMinutes = (int) ($completed->s ?? 0) + (int) ($ongoing->s ?? 0);
+        $countRows  = (int) ($completed->c ?? 0) + (int) ($ongoing->c ?? 0);
+        $avgMin     = $countRows > 0 ? (int) round($sumMinutes / $countRows) : 0;
+
+        $kpi['avg_min'] = $avgMin;
+
+        // Listado
         $accesses = $qAccess->latest('entry_at')->paginate(20)->withQueryString();
 
-        // 5) Datos para filtros (solo admins)
+        // Filtros (admin)
         $branches = $isAdmin ? \App\Models\Branch::orderBy('name')->get() : collect();
 
         return view('reportes.index', [
