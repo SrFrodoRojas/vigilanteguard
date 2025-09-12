@@ -1,58 +1,55 @@
 #!/usr/bin/env bash
 # =============================================================================
 #  Script de mantenimiento + backup + (opcional) servidor de desarrollo
-#  Proyecto: VIGILANTE (Laravel)
-#  Mejores prácticas:
-#   - set -Eeuo pipefail, trap de errores, validaciones de binarios y rutas
-#   - rotación configurable de backups, compresión .sql.gz opcional
-#   - verificación segura de APP_KEY antes de key:generate
-#   - servidor dev por defecto SOLO localhost (EXPOSE_DEV=1 para exponer)
-#   - detección correcta de OWNER cuando se usa sudo
-#   - exclusiones robustas en zip (zip relativo para evitar rutas absolutas)
+#  Proyecto: VIGILANTE (Laravel) - Manjaro/Arch edition
+#  - set -Eeuo pipefail, trap de errores
+#  - backups rotativos (.zip + .sql/.sql.gz)
+#  - verificación de APP_KEY segura
+#  - storage:link, caches, permisos
+#  - servidor dev por defecto en 0.0.0.0:8000 (LAN)
+#  - usa mariadb-dump si existe, o mysqldump si no
+#
+# Requisitos sugeridos (una sola vez):
+#   sudo pacman -S --needed php zip mariadb-clients grep findutils coreutils gzip
 # =============================================================================
 
 set -Eeuo pipefail
 IFS=$'\n\t'
 umask 022
 
-# ---- Configuración base (tus valores) ----------------------------------------
-RUTA="/var/www/html/vigilante"
-RUTA_BACKUP="/var/www/html"
+# ---- Configuración base -------------------------------------------------------
+RUTA="/srv/http/vigilante"
+RUTA_BACKUP="/srv/http"
+
 DB_NAME="vigilante"
 DB_USER="root"
-DB_PASS="@info2016!"
+DB_PASS="@info2016!"    # Sugerido: usar ~/.my.cnf para no exponerla (ver más abajo)
+
 BACKUP_DIR="$RUTA_BACKUP/backups/vigilante"
 TIMESTAMP="$(date +"%Y-%m-%d_%H-%M-%S")"
 PROYECTO="backup_vigilante_${TIMESTAMP}"
 ZIP_NAME="${PROYECTO}.zip"
 SQL_NAME="${PROYECTO}.sql"
 
-# ---- Configuraciones extra ----------------------------------------------------
-# Cuántos backups mantener (se cuentan .zip, .sql y .sql.gz)
-BACKUP_RETAIN=10
+# Grupo del servidor web en Manjaro/Arch
+WEB_GROUP="${WEB_GROUP:-http}"
 
-# Comprimir además el dump SQL en .gz (true/false)
-GZIP_SQL=true
+# ---- Config extra -------------------------------------------------------------
+BACKUP_RETAIN=10         # cuántos backups mantener
+GZIP_SQL=true            # comprimir el dump .sql en .gz (true/false)
 
-# Servidor dev:
-#   - Por defecto solo localhost (127.0.0.1)
-#   - EXPOSE_DEV=1 -> 0.0.0.0 (LAN)
-#   - RUN_DEV_SERVER=0 para NO levantar el server
-#   - RUN_DEV_BG=1 para correrlo en background
-DEV_HOST="${EXPOSE_DEV:+0.0.0.0}"
-DEV_HOST="${DEV_HOST:-127.0.0.1}"
-DEV_PORT="8000"
-RUN_DEV_SERVER="${RUN_DEV_SERVER:-1}"
-RUN_DEV_BG="${RUN_DEV_BG:-0}"
+# Servidor dev (por defecto LAN)
+DEV_HOST="${DEV_HOST:-0.0.0.0}"
+DEV_PORT="${DEV_PORT:-8000}"
+RUN_DEV_SERVER="${RUN_DEV_SERVER:-1}"   # 1=levantar server dev, 0=no
+RUN_DEV_BG="${RUN_DEV_BG:-0}"           # 1=background, 0=bloqueante
 
-# Log de ejecución (opcional). Comenta si no lo querés.
+# Log de ejecución (opcional)
 LOG_FILE="$BACKUP_DIR/run_${TIMESTAMP}.log"
 
-# ---- Funciones utilitarias ----------------------------------------------------
+# ---- Utilitarios --------------------------------------------------------------
 fail() { echo "❌ $*" >&2; exit 1; }
-
 need_bin() { command -v "$1" >/dev/null 2>&1 || fail "No se encontró el binario requerido: $1"; }
-
 log() {
   if [ -n "${LOG_FILE:-}" ]; then
     mkdir -p "$BACKUP_DIR" 2>/dev/null || true
@@ -61,16 +58,21 @@ log() {
     echo -e "$*"
   fi
 }
-
-trap 'log "⚠️  Error en línea $LINENO. Abortando."; exit 1' ERR
+trap 'log "⚠  Error en línea $LINENO. Abortando."; exit 1' ERR
 
 # ---- Chequeos previos ---------------------------------------------------------
 need_bin php
 need_bin find
 need_bin zip
-need_bin mysqldump
 need_bin grep
 $GZIP_SQL && need_bin gzip || true
+
+# mariadb-dump preferido; fallback a mysqldump
+DUMP_BIN="$(command -v mariadb-dump || true)"
+if [ -z "$DUMP_BIN" ]; then
+  need_bin mysqldump
+  DUMP_BIN="$(command -v mysqldump)"
+fi
 
 [ -d "$RUTA" ] || fail "La ruta de proyecto no existe: $RUTA"
 
@@ -78,21 +80,26 @@ $GZIP_SQL && need_bin gzip || true
 if [ "$(id -u)" -ne 0 ]; then SUDO="sudo"; else SUDO=""; fi
 OWNER="${SUDO_USER:-$USER}"
 
-# Crear carpeta de backups y fijar permisos
+# Asegurar grupo válido (si http no existe, usar grupo del OWNER)
+if ! getent group "$WEB_GROUP" >/dev/null 2>&1; then
+  WEB_GROUP="$(id -gn "$OWNER")"
+fi
+
+# Crear carpeta de backups y permisos
 $SUDO mkdir -p "$BACKUP_DIR"
-$SUDO chown -R "$OWNER:www-data" "$BACKUP_DIR"
+$SUDO chown -R "$OWNER:$WEB_GROUP" "$BACKUP_DIR"
 
 # ---- INICIO -------------------------------------------------------------------
 log "🔐 Aplicando permisos a $RUTA (excluyendo node_modules, vendor, .git)..."
 
-# Un (1) chown global consistente
-$SUDO chown -R "$OWNER:www-data" "$RUTA"
+# Chown global consistente
+$SUDO chown -R "$OWNER:$WEB_GROUP" "$RUTA"
 
 # Permisos a carpetas y archivos (excepto excluidos)
 find "$RUTA" \( -path "$RUTA/node_modules" -o -path "$RUTA/vendor" -o -path "$RUTA/.git" \) -prune -o -type d -exec chmod 755 {} \;
 find "$RUTA" \( -path "$RUTA/node_modules" -o -path "$RUTA/vendor" -o -path "$RUTA/.git" \) -prune -o -type f -exec chmod 644 {} \;
 
-# Permisos especiales (solo chmod; chown ya lo cubre el global)
+# Permisos especiales para Laravel
 $SUDO chmod -R 775 "$RUTA/storage" "$RUTA/bootstrap/cache"
 $SUDO chmod -R 775 "$RUTA/public/images" 2>/dev/null || true
 
@@ -111,8 +118,8 @@ php artisan view:clear
 php artisan optimize:clear
 log "✅ Cachés limpiadas."
 
-# Generar APP_KEY solo si falta
-log "⚙️ Verificando APP_KEY..."
+# APP_KEY
+log "⚙ Verificando APP_KEY..."
 if ! grep -qE '^APP_KEY=.+$' .env 2>/dev/null; then
   log "🔑 APP_KEY vacío: generando nueva clave..."
   php artisan key:generate
@@ -128,18 +135,28 @@ php artisan view:cache
 # Symlink de storage
 log "🔗 Verificando symlink de storage..."
 if php artisan storage:link 2>/dev/null; then
-  log "✔️ Symlink creado."
+  log "✔ Symlink creado."
 else
-  log "⚠️ Symlink ya existe o no fue necesario."
+  log "⚠ Symlink ya existe o no fue necesario."
 fi
 
 # ---- Backup de base de datos --------------------------------------------------
-log "🛢️ Generando backup de base de datos..."
-if mysqldump --single-transaction --quick --routines --triggers --events -u"$DB_USER" -p"$DB_PASS" "$DB_NAME" > "$BACKUP_DIR/$SQL_NAME"; then
+log "🛢 Generando backup de base de datos..."
+
+# Si existe ~/.my.cnf, no exponemos user/pass en la línea de comandos
+MYSQL_AUTH_ARGS=()
+if [ -f "$HOME/.my.cnf" ]; then
+  MYSQL_AUTH_ARGS=()  # mariadb-dump/ mysqldump leerán user/pass del archivo
+else
+  MYSQL_AUTH_ARGS=(-u"$DB_USER" -p"$DB_PASS")
+fi
+
+if "$DUMP_BIN" --single-transaction --quick --routines --triggers --events \
+  "${MYSQL_AUTH_ARGS[@]}" "$DB_NAME" > "$BACKUP_DIR/$SQL_NAME"; then
   log "✅ Dump SQL generado: $SQL_NAME"
   if [ "${GZIP_SQL}" = true ]; then
     if gzip -c "$BACKUP_DIR/$SQL_NAME" > "$BACKUP_DIR/$SQL_NAME.gz"; then
-      log "🗜️  Comprimido: $SQL_NAME.gz"
+      log "🗜  Comprimido: $SQL_NAME.gz"
     else
       log "❌ Falló compresión .gz (se mantiene .sql)."
     fi
@@ -170,7 +187,6 @@ fi
 # ---- Rotación de backups ------------------------------------------------------
 log "🧹 Rotando backups: dejando solo los ${BACKUP_RETAIN} más recientes..."
 cd "$BACKUP_DIR"
-# Mantener por fecha de modificación (archivos que nos interesan)
 ls -tp | grep -E '\.zip$|\.sql$|\.sql\.gz$' | tail -n +$((BACKUP_RETAIN+1)) | xargs -r -I {} rm -- "{}"
 log "✅ Limpieza de backups completada."
 
@@ -178,19 +194,18 @@ log "✅ Limpieza de backups completada."
 cd "$RUTA"
 log "🎉 Proceso de permisos + backups completado."
 log "📂 Guardados en: $BACKUP_DIR/$ZIP_NAME y $BACKUP_DIR/$SQL_NAME"
-log "ℹ️  Host público (si aplica): https://vigilante.rosaamara.online"
+log "ℹ  Servidor dev (si aplica): http://${DEV_HOST}:${DEV_PORT}"
 
 # ---- Servidor de desarrollo ---------------------------------------------------
 if [ "$RUN_DEV_SERVER" = "1" ]; then
-  log "⏳ Iniciando servidor local en http://${DEV_HOST}:${DEV_PORT} ..."
+  log "⏳ Iniciando servidor dev en http://${DEV_HOST}:${DEV_PORT} ..."
   if [ "$RUN_DEV_BG" = "1" ]; then
     APP_ENV=local APP_DEBUG=true php artisan serve --host="${DEV_HOST}" --port="${DEV_PORT}" &
     SVR_PID=$!
     log "✅ Servidor en background (PID: $SVR_PID)."
   else
-    # Bloqueante (hasta Ctrl+C)
     APP_ENV=local APP_DEBUG=true php artisan serve --host="${DEV_HOST}" --port="${DEV_PORT}"
   fi
 else
-  log "⏭️  RUN_DEV_SERVER=0 → no se inicia servidor dev."
+  log "⏭  RUN_DEV_SERVER=0 → no se inicia servidor dev."
 fi
